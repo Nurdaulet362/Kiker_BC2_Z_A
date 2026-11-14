@@ -333,6 +333,16 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
     repair: result.score - (result.diagnosisPassed ? 20 : 0) - (result.transferPassed ? 30 : 0),
     transfer: result.transferPassed ? 30 : 0,
   };
+  const completed = isLessonComplete(result);
+  const reason = completed
+    ? tr("All repair checks and the transfer answer passed; your score is at least 80.", "Все проверки исправления и ответ на перенос верны; результат — не меньше 80 баллов.")
+    : result.solutionRevealed
+      ? tr("You viewed the solution during this attempt.", "В этой попытке вы раскрыли решение.")
+      : !result.repairPassed
+        ? tr("Some repair checks did not pass. Start with the checks below.", "Не все проверки исправления пройдены. Начните с проверок ниже.")
+        : !result.transferPassed
+          ? tr("The transfer answer was incorrect. Review the new situation below.", "Ответ на перенос неверен. Разберите новую ситуацию ниже.")
+          : tr("Your score is below the 80 points needed to complete this lesson.", "Результат ниже 80 баллов, необходимых для зачёта занятия.");
   const components = [
     { label: tr("Found the cause", "Причина ошибки"), passed: result.diagnosisPassed, points: breakdown.diagnosis, max: 20, detail: result.diagnosisPassed ? tr("You spotted the assumption behind the error.", "Вы нашли неверное допущение в отчёте.") : lesson.diagnosis.find((option) => option.id === lesson.correctDiagnosis)?.label[language] },
     { label: tr("Repaired the report", "Исправление отчёта"), passed: result.repairPassed, points: breakdown.repair, max: 50, detail: lesson.kind === "decision" ? tr("Your recommendation was checked against the report you submitted.", "Рекомендация проверена по данным отчёта, который вы отправили.") : tr(`${result.checks.filter((check) => check.passed).length} of ${result.checks.length} checks passed on different data.`, `${result.checks.filter((check) => check.passed).length} из ${result.checks.length} проверок пройдено на разных данных.`) },
@@ -340,12 +350,44 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
   ];
   return <article className="lr-review">
     <div className="lr-work-top"><button className="lr-btn-quiet" type="button" onClick={onHome}><ArrowLeft size={17} />{tr("My learning", "Моё обучение")}</button><span className="lr-eyebrow">{lesson.title[language]}</span></div>
-    <section className="lr-review-hero"><div><span className="lr-completion-label"><Check size={15} />{tr("Lesson reviewed", "Задание разобрано")}</span><h1 ref={heading} tabIndex={-1}>{tr("Your lesson review", "Задание разобрано")}</h1><p>{isLessonComplete(result) ? tr("You have a solid foundation. Put it to work in the next case.", "Основа уже есть. Теперь примените её в следующем кейсе.") : tr("You found a useful place to focus. Let’s turn these mistakes into practice.", "Теперь понятно, что стоит потренировать. Разберём ошибки и закрепим навык.")}</p></div><div className="lr-score-ring" style={{ "--score": `${result.score}%` } as React.CSSProperties}><div><strong className="lr-score-number">{result.score}</strong><span>{tr("out of 100", "из 100")}</span></div></div></section>
+    <section className={`lr-review-hero${completed ? "" : " is-practice"}`}>
+      <div>
+        <span className="lr-completion-label">
+          {completed ? <Check size={15} aria-hidden="true" /> : <Target size={15} aria-hidden="true" />}
+          {completed ? tr("Lesson completed", "Занятие пройдено") : tr("Practice only", "Тренировочная попытка")}
+        </span>
+        <h1 ref={heading} tabIndex={-1}>{tr("Your lesson review", "Задание разобрано")}</h1>
+        <p className="lr-review-reason">{reason}</p>
+        <p>{completed ? tr("You have a solid foundation. Put it to work in the next case.", "Основа уже есть. Теперь примените её в следующем кейсе.") : tr("You found a useful place to focus. Let’s turn these mistakes into practice.", "Теперь понятно, что стоит потренировать. Разберём ошибки и закрепим навык.")}</p>
+      </div>
+      <div className="lr-score-ring"><div><strong className="lr-score-number">{result.score}</strong><span>{tr("out of 100", "из 100")}</span></div></div>
+    </section>
     {result.solutionRevealed && <p className="lr-inline-feedback is-review" role="status">{tr("You viewed the solution — try a similar case. This lesson is not counted as completed; repair points are capped at 25 out of 50.", "Вы смотрели решение — попробуйте похожий кейс. Занятие не засчитано как пройденное; за исправление можно получить не более 25 из 50 баллов.")}</p>}
     <div className="lr-review-grid">{components.map((component, index) => <section className={`lr-review-item${component.passed ? " is-success" : " is-review"}`} key={index}><div className="lr-review-item-top">{component.passed ? <CheckCheck size={20} /> : <Target size={20} />}<span>{component.points}<small> / {component.max}</small></span></div><h2>{component.label}</h2><p>{component.detail}</p></section>)}</div>
-    <section className="lr-review-explanation"><div className="lr-panel-heading"><Lightbulb size={22} /><h2>{tr("The rule, with the original example", "Правило на исходном примере")}</h2></div><p>{lesson.explanation[language]}</p>{lesson.kind === "formula" && <div className="lr-solution"><span>{tr("One possible formula", "Один из вариантов формулы")}</span><code>{lesson.solution}</code></div>}{result.snapshot?.formula && lesson.kind === "formula" && <div className="lr-submitted-formula"><span>{tr("Your submitted formula", "Ваша формула при отправке")}</span><code>{result.snapshot.formula}</code></div>}<div className="lr-transfer-explanation"><strong>{tr("In the new situation", "В новой ситуации")}</strong><p>{lesson.transfer.explanation[language]}</p></div></section>
-    <details className="lr-checks"><summary><CheckCheck size={18} />{tr("See the checks", "Посмотреть проверки")}<span>{result.checks.filter((check) => check.passed).length}/{result.checks.length}</span><ChevronDown size={17} /></summary><ul>{result.checks.map((check, index) => <li key={index}><span className={check.passed ? "lr-check-pass" : "lr-check-fail"}>{check.passed ? <Check size={17} /> : <CircleAlert size={17} />}</span><div><strong>{check.label[language]}</strong><p>{tr("Expected", "Ожидалось")}: <code>{checkDisplay(check.expected)}</code> <span aria-hidden="true">·</span> {tr("Your result", "Ваш результат")}: <code>{check.code ? localizeFormulaError({ error: check.actual, code: check.code, params: check.params }, language) : checkDisplay(check.actual)}</code></p></div></li>)}</ul></details>
-    <section className="lr-next-lesson"><div><p className="lr-eyebrow">{tr("Your next step", "Ваш следующий шаг")}</p><h2>{next.title[language]}</h2><p>{recommendation.reason[language]}</p></div><button type="button" className="lr-btn-primary" onClick={() => onStart(recommendation.lessonId)}>{tr("Next lesson", "Следующее задание")}<ArrowRight size={18} /></button></section>
-    <div className="lr-work-footer"><button type="button" className="lr-btn-quiet" onClick={() => onStart(lesson.id)}><RotateCcw size={16} />{tr("Try again", "Попробовать ещё раз")}</button><span>{tr("This score describes your practice, not a professional qualification.", "Баллы показывают результат задания и не являются профессиональной оценкой.")}</span></div>
+    <section className="lr-review-explanation" aria-labelledby="review-explanation-heading">
+      <div className="lr-panel-heading"><Lightbulb size={22} aria-hidden="true" /><h2 id="review-explanation-heading">{tr("Why the report was wrong", "Почему в отчёте была ошибка")}</h2></div>
+      <p>{lesson.explanation[language]}</p>
+      {lesson.kind === "formula" && <div className="lr-solution"><span>{tr("One possible formula", "Один из вариантов формулы")}</span><code>{lesson.solution}</code></div>}
+      {result.snapshot?.formula && lesson.kind === "formula" && <div className="lr-submitted-formula"><span>{tr("Your submitted formula", "Ваша формула при отправке")}</span><code>{result.snapshot.formula}</code></div>}
+      <div className="lr-transfer-explanation"><strong>{tr("In the new situation", "В новой ситуации")}</strong><p>{lesson.transfer.explanation[language]}</p></div>
+    </section>
+    <details className="lr-checks" key={result.id} open={!result.repairPassed}>
+      <summary><CheckCheck size={18} aria-hidden="true" />{tr("See the checks", "Посмотреть проверки")}<span>{result.checks.filter((check) => check.passed).length}/{result.checks.length}</span><ChevronDown size={17} aria-hidden="true" /></summary>
+      <ul>{result.checks.map((check, index) => <li key={index}>
+        <span className={check.passed ? "lr-check-pass" : "lr-check-fail"}>
+          {check.passed ? <Check size={17} aria-hidden="true" /> : <CircleAlert size={17} aria-hidden="true" />}
+          <span>{check.passed ? tr("Passed", "Пройдено") : tr("Needs practice", "Нужно потренировать")}</span>
+        </span>
+        <div><strong>{check.label[language]}</strong><p>{tr("Expected", "Ожидалось")}: <code>{checkDisplay(check.expected)}</code> <span aria-hidden="true">·</span> {tr("Your result", "Ваш результат")}: <code>{check.code ? localizeFormulaError({ error: check.actual, code: check.code, params: check.params }, language) : checkDisplay(check.actual)}</code></p></div>
+      </li>)}</ul>
+    </details>
+    <section className="lr-next-lesson" aria-label={tr("Next step", "Следующий шаг")}>
+      <div><p className="lr-eyebrow">{tr("Your next step", "Ваш следующий шаг")}</p><h2>{next.title[language]}</h2><p>{recommendation.reason[language]}</p></div>
+      <div className="lr-next-actions">
+        <button type="button" className="lr-btn-primary" onClick={() => onStart(recommendation.lessonId)}>{tr("Next lesson", "Следующее задание")}<ArrowRight size={18} aria-hidden="true" /></button>
+        <button type="button" className="lr-btn-secondary" onClick={() => onStart(lesson.id)}><RotateCcw size={16} aria-hidden="true" />{tr("Try again", "Попробовать ещё раз")}</button>
+      </div>
+    </section>
+    <p className="lr-review-score-note">{tr("This score describes your practice, not a professional qualification.", "Баллы показывают результат задания и не являются профессиональной оценкой.")}</p>
   </article>;
 }

@@ -311,7 +311,18 @@
 .lr-next-lesson { background: #fff0e7; border: 1px solid #efded0; border-radius: 11px; padding: 25px 27px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .lr-next-lesson h2 { font-size: 20px; margin: 8px 0; }
 .lr-next-lesson p { color: #786053; font-size: 12px; max-width: 600px; }
-.lr-next-lesson > button { flex-shrink: 0; }
+.lr-next-actions { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+.lr-next-actions > button { width: 100%; }
+.lr-review-score-note { margin-top: 19px; color: #5e666d; font-size: 11px; }
+.lr-review-hero.is-practice { background: #fff4e9; border-color: #ead8c7; }
+.lr-review-hero.is-practice .lr-completion-label { color: #805632; }
+.lr-review-hero.is-practice .lr-score-ring { border-color: #e1c7a8; }
+.lr-review-hero p.lr-review-reason { color: var(--learn-ink); font-weight: 600; margin: 12px 0 6px; }
+.lr-review .lr-completion-label { font-size: 11px; letter-spacing: .6px; }
+.lr-review .lr-checks li > span { flex: 0 0 100px; }
+.lr-review .lr-checks li > span > span { color: inherit; margin-top: 3px; }
+.lr-review .lr-checks code { overflow-wrap: anywhere; }
+.lr-review .lr-checks[open] summary > svg:last-child { transform: rotate(180deg); }
 .learn-sidebar-close { display: none; }
 .lr-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .lr-eyebrow { display: flex; align-items: center; gap: 7px; }
@@ -409,3 +420,13 @@
 @media (max-width: 590px) { .lr-work-footer > span { max-width: 100%; font-size: 10px; }.lr-work-top > .lr-eyebrow { text-align: right; font-size: 8px; max-width: 55%; }.lr-brief-aside ol { display: block; }.lr-memo-body > p { font-size: 13px; }.lr-data-foot { font-size: 8px; gap: 5px; padding-inline: 12px; }.lr-data-foot .lr-btn-quiet { font-size: 9px; }.lr-sheet .lr-status { padding-inline: 4px; font-size: 9px; }.lr-sheet-wrap { max-width: 100%; }.lr-review-hero { flex-direction: row; align-items: center; gap: 15px; }.lr-review-hero > div:first-child { min-width: 0; }.lr-review-hero h1 { font-size: 22px; }.lr-review-hero p { font-size: 11px; }.lr-completion-label { font-size: 8px; }.lr-score-ring { width: 80px; height: 80px; border-width: 5px; }.lr-score-ring strong { font-size: 27px; }.lr-score-ring span { font-size: 9px; } }
 @media (prefers-reduced-motion: reduce) { .learn-app *, .learn-app *::before, .learn-app *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 @media (max-width: 590px) { .lr-workspace .lr-work-footer:has(> span:first-child) { flex-direction: column; align-items: stretch; }.lr-workspace .lr-work-footer:has(> span:first-child) > span { text-align: center; }.lr-workspace .lr-work-footer:has(> span:first-child) > button { width: 100%; } }
+@media (max-width: 590px) {
+  .lr-review .lr-review-hero { flex-direction: column-reverse; align-items: flex-start; padding: 22px; }
+  .lr-review .lr-review-hero h1 { font-size: 25px; }
+  .lr-review .lr-review-hero p { font-size: 13px; }
+  .lr-review .lr-score-ring { width: 90px; height: 90px; }
+  .lr-review .lr-score-ring strong { font-size: 32px; }
+  .lr-review .lr-score-ring span { font-size: 11px; }
+  .lr-next-actions { width: 100%; }
+  .lr-review .lr-checks li > span { flex-basis: 80px; }
+}
