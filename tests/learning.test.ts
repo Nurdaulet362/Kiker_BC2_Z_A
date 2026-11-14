@@ -10,6 +10,9 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("keeps the length error code when grading an oversized formula", () => {
+    expect(() => evaluateLesson({ ...solution("revenue-cancelled"), formula: `=${"1".repeat(1000)}` })).toThrowError(expect.objectContaining({ code: "length" }));
+  });
   it("preserves a draft seed and a monotonic attempt counter after history eviction", () => {
     const id = "revenue-cancelled";
     const state = initialLearning();

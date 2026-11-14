@@ -24,6 +24,45 @@ test("a timed-out worker shows the timeout reason in Russian and follows the lan
   await expect(page.locator(".lr-output-error")).toContainText(/too long|timed out/i);
 });
 
+test("successive previews and grading reuse the same learning worker", async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+    const counts = { starts: 0 };
+    Object.defineProperty(window, "workerCounts", { value: counts });
+    window.Worker = class extends NativeWorker {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options);
+        counts.starts += 1;
+      }
+    };
+  });
+  await startCancelled(page);
+  await expect(page.locator(".lr-output strong")).toHaveText(/2\s?030/);
+  await page.getByRole("textbox", { name: "Ваша формула", exact: true }).fill("=42");
+  await expect(page.locator(".lr-output strong")).toHaveText(/42/);
+  await submitCancelled(page);
+  expect(await page.evaluate(() => (window as unknown as { workerCounts: { starts: number } }).workerCounts.starts)).toBe(1);
+});
+
+test("grading timeout retains its code when the learner switches to Russian", async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker;
+    window.Worker = class extends NativeWorker {
+      postMessage(message: { type: string }) {
+        if (message.type !== "grade") super.postMessage(message);
+      }
+    };
+  });
+  await startCancelled(page);
+  await page.getByRole("button", { name: "English", exact: true }).click();
+  await page.getByRole("textbox", { name: "Your formula", exact: true }).fill(cancelled.solution);
+  await page.getByRole("radio", { name: diagnosis.label.en, exact: true }).check();
+  await page.getByRole("button", { name: "Check solution", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("too long", { timeout: 10000 });
+  await page.getByRole("button", { name: "Русский", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("Время ожидания расчёта истекло");
+});
+
 async function startCancelled(page: Page) {
   await page.goto("/");
   await page.getByTestId(`lesson-${cancelled.id}`).click();

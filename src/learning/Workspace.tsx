@@ -94,7 +94,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
   const [preview, setPreview] = useState<{ value?: number | string; error?: string; code?: FormulaIssue["code"]; params?: FormulaIssue["params"] } | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | FormulaIssue>("");
   const [repairReview, setRepairReview] = useState<LessonResult | null>(null);
   const [confirmSolution, setConfirmSolution] = useState(false);
   const [cellEdits, setCellEdits] = useState<Record<string, string>>({});
@@ -202,7 +202,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
       else setRepairReview(result);
     } catch (err) {
       if (id === requestId.current && !controller.signal.aborted) {
-        setError(readableError(formulaIssue(err), language));
+        setError(formulaIssue(err));
       }
     } finally {
       if (id === requestId.current) setBusy(false);
@@ -278,7 +278,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
           <section className="lr-answer-panel" aria-label={tr("Your solution", "Ваше решение")}>
             <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">1</span>{tr("What was wrong with the original report?", "В чём ошибка исходного отчёта?")}</legend>{diagnosisOptions.map((option) => <Choice key={option.id} name="diagnosis" id={option.id} selected={draft.diagnosis} onChange={(diagnosis) => updateDraft({ diagnosis })}>{option.label[language]}</Choice>)}</fieldset>
             {lesson.kind === "formula" ? <div className="lr-formula-field"><label htmlFor="lr-formula"><span className="lr-question-number" aria-hidden="true">2</span>{tr("Your formula", "Ваша формула")}</label><p>{tr("The current formula contains an error. Edit it below.", "В текущей формуле есть ошибка. Исправьте её ниже.")}</p><div className="lr-formula-editor"><span aria-hidden="true">ƒx</span><textarea id="lr-formula" rows={3} value={draft.formula} maxLength={1000} spellCheck={false} onChange={(e) => updateDraft({ formula: e.target.value })} aria-describedby="lr-formula-help" /></div><p id="lr-formula-help" className="lr-field-help">{tr('Use English functions and status values ("Paid"), with commas. Rows 2–101 are available.', 'Названия функций и статусы ("Paid") — на английском, разделитель — запятая. Доступны строки 2–101.')}</p><div className="lr-output" role="status" aria-live="polite"><span>{tr("Your formula returns", "По вашей формуле")}</span>{calculating ? <span className="lr-calculating"><LoaderCircle size={17} className="lr-spin" />{tr("Calculating…", "Считаем…")}</span> : preview?.error ? <span className="lr-output-error">{readableError({ ...preview, error: preview.error }, language)}</span> : <strong>{preview?.value !== undefined ? formatLessonValue(preview.value, lesson.format, language) : "—"}</strong>}</div></div> : <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">2</span>{tr("What would you recommend?", "Что вы порекомендуете?")}</legend>{lesson.decisionOptions?.map((option) => <Choice key={option.id} name="decision" id={option.id} selected={draft.decision} onChange={(decision) => updateDraft({ decision })}>{option.label[language]}</Choice>)}</fieldset>}
-            {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{error}</p>}
+            {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{typeof error === "string" ? error : readableError(error, language)}</p>}
             {repairReview && <div className={`lr-inline-feedback${repairReview.repairPassed && repairReview.diagnosisPassed ? " is-success" : " is-review"}`} role="status"><span>{repairReview.repairPassed && repairReview.diagnosisPassed ? <CheckCheck size={21} /> : <CircleAlert size={21} />}</span><div><strong>{repairReview.repairPassed && repairReview.diagnosisPassed ? tr("Your solution holds up", "Решение выдержало проверку") : tr("There is still something to explore", "Есть над чем поработать")}</strong><p>{repairReview.repairPassed ? (lesson.kind === "decision" ? tr("Your recommendation follows the current data.", "Рекомендация соответствует текущим данным.") : tr("The calculation works on the test data.", "Расчёт работает на проверочных данных.")) : tr(`${repairReview.checks.filter((check) => check.passed).length} of ${repairReview.checks.length} checks passed. Try the hint and check again, or continue to the review.`, `Пройдено ${repairReview.checks.filter((check) => check.passed).length} из ${repairReview.checks.length} проверок. Можно открыть подсказку и повторить проверку или продолжить до разбора.`)}</p>{!repairReview.diagnosisPassed && <p>{tr("Reconsider the cause you selected.", "Проверьте выбранную причину ошибки.")}</p>}</div></div>}
             <button type="button" className="lr-btn-secondary lr-check-button" onClick={() => void assess(false)} disabled={busy}>{busy ? <LoaderCircle size={17} className="lr-spin" /> : <CheckCheck size={18} />}{busy ? tr("Checking…", "Проверяем…") : tr("Check solution", "Проверить решение")}</button>
           </section>
@@ -291,7 +291,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
           <span className="lr-transfer-icon"><Target size={30} /></span><p className="lr-eyebrow">{tr("One more step", "Ещё один шаг")}</p>
           <fieldset className="lr-question lr-transfer-question"><legend>{lesson.transfer.prompt[language]}</legend>{transferOptions.map((option) => <Choice key={option.id} name="transfer" id={option.id} selected={draft.transfer} onChange={(transfer) => updateDraft({ transfer })}>{option.label[language]}</Choice>)}</fieldset>
           <p className="lr-transfer-note">{tr("This uses new data. Think about the rule, not the number you saw earlier.", "Здесь другие данные. Вспомните правило, а не число из предыдущего отчёта.")}</p>
-          {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{error}</p>}
+          {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{typeof error === "string" ? error : readableError(error, language)}</p>}
         </section>
         <div className="lr-work-footer"><button className="lr-btn-quiet" type="button" onClick={() => updateDraft({ step: 1 })}><ArrowLeft size={16} />{tr("Back to the report", "Вернуться к отчёту")}</button><button className="lr-btn-primary" type="button" onClick={() => void assess(true)} disabled={busy}>{busy ? <LoaderCircle size={18} className="lr-spin" /> : <Check size={18} />}{busy ? tr("Preparing your review…", "Готовим разбор…") : tr("Finish lesson", "Завершить задание")}</button></div>
       </>}

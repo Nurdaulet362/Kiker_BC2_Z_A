@@ -1,4 +1,4 @@
-import type { FormulaIssue } from "../formula-errors";
+import { FormulaWorkerError, type FormulaIssue } from "../formula-errors";
 import { calculateGrid } from "../formula";
 import { chooseChannel } from "../decision";
 import {
@@ -79,7 +79,7 @@ export function evaluateLesson(input: LessonInput): LessonResult {
   const lesson = getLesson(input.lessonId);
   const invalid = validateLessonRows(lesson, input.rows);
   if (invalid) throw new Error(invalid);
-  if (typeof input.formula !== "string" || input.formula.length > 1000) throw new Error("Keep your formula under 1,000 characters.");
+  if (typeof input.formula !== "string" || input.formula.length > 1000) throw new FormulaWorkerError("length");
   const hintLevel = input.hintLevel ?? 0;
   if (![0, 1, 2, 3].includes(hintLevel)) throw new Error("Invalid hint level.");
   const solutionRevealed = hintLevel === 3;
