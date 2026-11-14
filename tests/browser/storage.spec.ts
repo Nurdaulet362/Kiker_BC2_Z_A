@@ -89,3 +89,14 @@ for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#tria
     expect(await page.evaluate(k => localStorage.getItem(k), storageKey)).toBe(future);
   });
 }
+
+test("invalid saved results are removed from active history only after backing up the original bytes", async ({ page }) => {
+  const result = { id: "kept-review", lessonId: "revenue-cancelled", score: 100, diagnosisPassed: true, repairPassed: true, transferPassed: true, hintLevel: 0, solutionRevealed: false, checks: [], at: "2026-11-14T10:00:00.000Z" };
+  const original = JSON.stringify({ version: 2, goal: "all", drafts: {}, attempts: {}, results: [result, { ...result, id: "rejected-review", score: -1 }] }, null, 2);
+  await page.addInitScript(({ key, original }) => localStorage.setItem(key, original), { key, original });
+  await page.goto("/#progress");
+  await expect(page.locator(".learn-history-list button")).toHaveCount(1);
+  await expect.poll(() => page.evaluate(key => localStorage.getItem(`${key}.backup`), key)).toBe(original);
+  const ids = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).results.map((r: { id: string }) => r.id), key);
+  expect(ids).toEqual(["kept-review"]);
+});

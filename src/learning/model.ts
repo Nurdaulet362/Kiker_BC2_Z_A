@@ -314,17 +314,23 @@ const learningMigrations: Record<number, (state: LearningState) => LearningState
   1: state => ({ ...state, version: 2 }),
 };
 
-export function migrate(raw: string | null): LearningState {
+export type LearningRestoreAudit = { discarded: boolean };
+
+export function migrate(raw: string | null, audit?: LearningRestoreAudit): LearningState {
+  const reject = () => {
+    if (raw?.trim() && audit) audit.discarded = true;
+    return initialLearning();
+  };
   try {
     if (!raw) return initialLearning();
     let state = JSON.parse(raw) as LearningState;
-    if (!state || !Number.isInteger(state.version)) return initialLearning();
+    if (!state || !Number.isInteger(state.version)) return reject();
     while (state.version < 2) {
       const migration = learningMigrations[state.version];
-      if (!migration) return initialLearning();
+      if (!migration) return reject();
       state = migration(state);
     }
-    if (!state || state.version !== 2 || !["all", ...SKILLS.map((skill) => skill.id)].includes(state.goal) || !Array.isArray(state.results) || !state.drafts || typeof state.drafts !== "object" || Array.isArray(state.drafts)) return initialLearning();
+    if (!state || state.version !== 2 || !["all", ...SKILLS.map((skill) => skill.id)].includes(state.goal) || !Array.isArray(state.results) || !state.drafts || typeof state.drafts !== "object" || Array.isArray(state.drafts)) return reject();
     const drafts: Record<string, LessonDraft> = {};
     for (const lesson of LESSONS) {
       if (state.drafts[lesson.id] && validDraft(lesson, state.drafts[lesson.id])) drafts[lesson.id] = { ...state.drafts[lesson.id], hintLevel: state.drafts[lesson.id].hintLevel ?? 0 };
@@ -349,6 +355,8 @@ export function migrate(raw: string | null): LearningState {
       solutionRevealed: result.solutionRevealed ?? result.hintLevel === 3,
       ...(result.snapshot ? { snapshot: { ...result.snapshot, hintLevel: result.snapshot.hintLevel ?? 0 } } : {}),
     }));
+    if (audit && (state.results.length !== validResults.length || validResults.length > MAX_RESULTS
+      || Object.keys(state.drafts).length !== Object.keys(drafts).length)) audit.discarded = true;
     const results = validResults.slice(-MAX_RESULTS);
     const closedAttempts: Record<string, number> = {};
     for (const lesson of LESSONS) {
@@ -371,10 +379,10 @@ export function migrate(raw: string | null): LearningState {
     return { version: 2, goal: state.goal, drafts, attempts, closedAttempts, results,
       ...(typeof state.goalUpdatedAt === "string" && Number.isFinite(Date.parse(state.goalUpdatedAt)) ? { goalUpdatedAt: state.goalUpdatedAt } : {}),
     };
-  } catch { return initialLearning(); }
+  } catch { return reject(); }
 }
 
-export function restoreLearning(raw: string | null): LearningState { return migrate(raw); }
+export function restoreLearning(raw: string | null, audit?: LearningRestoreAudit): LearningState { return migrate(raw, audit); }
 
 export function findLessonResult(results: readonly LessonResult[], id: string): LessonResult | undefined {
   return results.find(result => result.id === id) ?? results.find(result => result.at === id);

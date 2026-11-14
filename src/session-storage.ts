@@ -1,6 +1,7 @@
 type StoragePolicy = {
   version: number;
   merge?: (current: string | null, incoming: string) => string;
+  needsBackup?: (source: string, merged: string) => boolean;
 };
 
 const sessionItems = new Map<string, string | null>();
@@ -72,7 +73,16 @@ function flushKey(key: string): void {
   }
   try {
     const merged = mergeValue(key, physical.value, incoming);
-    if (merged !== physical.value) localStorage.setItem(key, merged);
+    if (merged !== physical.value) {
+      const needsBackup = policies.get(key)?.needsBackup;
+      // Prefer the durable source when both inputs lose data: the backup is
+      // deliberately one slot. A failed backup write must abort replacement.
+      const original = needsBackup ? [physical.value, incoming].find(
+        (source): source is string => source !== null && needsBackup(source, merged),
+      ) : undefined;
+      if (original !== undefined) localStorage.setItem(`${key}.backup`, original);
+      localStorage.setItem(key, merged);
+    }
     pending.delete(key);
     publish(key, merged);
     saveStatus(key, false);

@@ -3,11 +3,12 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, BookOpen, Check, C
 import { LanguageContext, LanguageSwitcher } from "../i18n";
 import { configureSessionItem, getSessionItem, readSessionItem, setSessionItem, subscribe, subscribeSaveStatus } from "../session-storage";
 import { LESSONS, SKILLS, LEARNING_KEY, findLessonResult, setLearningGoal, beginLesson, nextLessonAttempt, saveLessonDraft, initialDraft, initialLearning, isLessonComplete, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
+import { needsLearningBackup } from "./storage-backup";
 import { mergeLearning, mergeLearningJSON, prepareLessonInput, recordLessonResult } from "./persistence";
 import { LessonReview, Workspace } from "./Workspace";
 import "./learning.css";
 
-configureSessionItem(LEARNING_KEY, { version: 2, merge: mergeLearningJSON });
+configureSessionItem(LEARNING_KEY, { version: 2, merge: mergeLearningJSON, needsBackup: needsLearningBackup });
 
 const skillIcons = { revenue: FileCheck2, conversion: BarChart3, decisions: Target };
 
