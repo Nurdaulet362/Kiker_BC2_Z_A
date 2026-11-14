@@ -170,13 +170,13 @@ Source: [PRODUCT.md](../../PRODUCT.md), [CONTEXT.md](../../CONTEXT.md), [DEMO.md
 
 Source: [CONTEXT.md — Zimran direction](../../CONTEXT.md), referencing [Zimran](https://zimran.io/) and [Zimran IT School](https://itschool.zimran.io/en).
 
-## 22. Why is the app not public yet?
+## 22. Where can we try the app and inspect its source?
 
-**EN:** The current submission preparation respects the owner's publication hold. The prototype runs locally, and the material is ready to support an authorized static deployment and source publication. Public URLs must be added only after that authorization and an actual accessibility check. We do not present a local address as a public demo.
+**EN:** Open the [public demo](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site) and the [public GitHub repository](https://github.com/Nurdaulet362/Kiker_BC2_Z_A). The owner authorized both publications. The demo includes all six lessons and Work Trial with a persistent **Demo access — not a purchase** banner. Payments remain disconnected. The published demo passed 72/72 Chromium e2e tests on its first run; a physical-phone check remains pending.
 
-**RU:** Разрешение на подготовку документов не является разрешением на push, деплой или открытие репозитория.
+**RU:** Демо и исходники опубликованы с разрешения владельца. Полный доступ в демо не означает покупку; оплата не подключена. Проверка на физическом телефоне ещё не выполнена.
 
-Source: [PROJECT_HANDOFF.md — constraints](../PROJECT_HANDOFF.md), [SPRINT_SUMMARY.md](../SPRINT_SUMMARY.md).
+Source: [PUBLIC_RELEASE.md — public verification](PUBLIC_RELEASE.md), [SUBMISSION_CHECKLIST.md — publication status](SUBMISSION_CHECKLIST.md).
 
 ## 23. What is the biggest remaining product risk?
 

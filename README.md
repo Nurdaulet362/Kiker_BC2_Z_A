@@ -6,6 +6,10 @@ Fix the Report is a browser learning app built for the Zimran × AIESEC hackatho
 
 English is the default, regardless of browser language. The EN/RU switch saves your choice. No account is required; progress stays in this browser. All companies and exercise data are fictional. There is no live AI service.
 
+**[Open the public demo](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site)** · **[Source on GitHub](https://github.com/Nurdaulet362/Kiker_BC2_Z_A)**
+
+The published demo opens all six lessons and Work Trial with the persistent **Demo access — not a purchase** banner. Payments remain disconnected.
+
 ## Run locally
 
 Use Node.js 22.12+; the frozen version was also checked with Node.js 26.13.0.
@@ -78,6 +82,8 @@ Work Trial combines revenue, conversion and a channel decision, with 30 checks a
 
 The sprint closed at code commit `01302ea` with **242 unit tests and 72 Chromium e2e tests passing in each mode**. The [task 4 report](docs/SPRINT_TASK_4_REPORT.md) records those runs, the initial failed fixture and its correction. A separate [clean-clone release check](docs/submission/RELEASE_CHECK.md) records the later verification of the frozen code.
 
+A fresh unauthenticated clone of public GitHub `main` at [`a7ea438`](https://github.com/Nurdaulet362/Kiker_BC2_Z_A/commit/a7ea43838159c2dde91d43d1dbb86e8e2e2b820a) passed `npm ci`, TypeScript, **242 unit tests in each mode**, and both production builds. Application code remains identical to frozen `01302ea`. The published demo separately passed **72/72 Chromium e2e tests** on its first run, with no failures, skips or flaky tests. See the [public release verification](docs/submission/PUBLIC_RELEASE.md) for commands, timings and deployment checks.
+
 Install dependencies once, then check normal mode:
 
 ```sh
@@ -118,7 +124,7 @@ The test flag must match the build being served. Run browser suites sequentially
 - **Payments and subscription business:** this release does not establish paid customers, functioning checkout or measured subscription retention.
 - **Spreadsheet compatibility:** this is a restricted formula environment, not Excel compatibility. Criteria are case-sensitive: `"Paid"` matches the exercise status; `"paid"` does not. Wildcard escaping and empty-cell behavior have library-specific limits.
 - **Persistence:** local storage is not account sync. Clearing browser data removes access to local progress. Storage failures use an in-page fallback with a warning; closing the page can lose that fallback. Cross-tab merges are not atomic transactions.
-- **Public availability:** local tests do not prove a deployment works. Publication and public URL checks remain separate release steps.
+- **Other browsers and physical devices:** a physical phone, Firefox and WebKit remain unverified. Responsive Chromium checks do not establish physical-device coverage.
 
 The project is intended to fit a consumer learning-product direction. It does not claim a partnership with, or endorsement by, Zimran.
 

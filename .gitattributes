@@ -1,0 +1,3 @@
+# Preserve submission artifacts as binary files.
+*.pdf binary
+*.webm binary

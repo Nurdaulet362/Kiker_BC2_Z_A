@@ -262,20 +262,20 @@ Next: observe target learners, test independent transfer, return behavior, and w
 
 **Try the practice loop. Challenge the formula.**
 
-APP URL — PENDING AUTHORIZED DEPLOYMENT
+[OPEN THE DEMO](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site)
 
-REPOSITORY URL — PENDING AUTHORIZED PUBLICATION
+[VIEW THE SOURCE](https://github.com/Nurdaulet362/Kiker_BC2_Z_A)
 
 ### Speaker notes — RU
 
-Мы уже можем показать работающий цикл и проверить формулу на изменённых данных. Следующее доказательство — работа реальных целевых пользователей: могут ли они самостоятельно решить незнакомое задание, выбирают ли второй урок, возвращаются ли позже и готовы ли платить. Это план исследования, не отчёт о проведённых интервью или продажах. Публичные адреса будут добавлены только после разрешённой публикации и проверки доступности. Пока перед нами локальный прототип; ссылки-заглушки на слайде не являются опубликованными адресами.
+Мы уже можем показать работающий цикл и проверить формулу на изменённых данных. Следующее доказательство — работа реальных целевых пользователей: могут ли они самостоятельно решить незнакомое задание, выбирают ли второй урок, возвращаются ли позже и готовы ли платить. Это план исследования, не отчёт о проведённых интервью или продажах. С разрешения владельца опубликованы демо и исходники на GitHub; ссылки на слайде ведут к ним. Демо открывает все уроки с постоянной пометкой «Demo access — not a purchase»; оплата не подключена.
 
 ### Visual and caption
 
-- Visual: close with the first report and a short call to try it. Until publication is authorized and verified, use plain placeholder text; do not encode a placeholder in a QR code.
+- Visual: close with the first report and the two public links above. Any QR code must encode the actual demo URL.
 - Caption: **Working prototype now. User evidence next.**
 - Screenshot source: `.impeccable/review/submission/workspace-after-pitch.png` or `.impeccable/review/submission/success-mobile.png`.
 
 ### Sources
 
-[PRODUCT.md — audience and constraints](../../PRODUCT.md), [CONTEXT.md](../../CONTEXT.md), [PROJECT_HANDOFF.md — publication constraints](../PROJECT_HANDOFF.md).
+[PRODUCT.md — audience and constraints](../../PRODUCT.md), [CONTEXT.md](../../CONTEXT.md), [SUBMISSION_CHECKLIST.md — publication status](SUBMISSION_CHECKLIST.md).
