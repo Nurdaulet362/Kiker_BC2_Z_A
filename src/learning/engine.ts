@@ -1,4 +1,5 @@
 import { calculateGrid } from "../formula";
+import { chooseChannel } from "../decision";
 import {
   formatLessonValue,
   getLesson,
@@ -28,9 +29,12 @@ export function expectedLessonValue(lesson: Lesson, rows: Row[]): number | strin
 }
 
 export function expectedDecision(rows: Row[]): "email" | "ads" | "hold" {
-  const ratios = rows.map((row) => Number(row[2]) > 0 ? (Number(row[1]) - Number(row[2])) / Number(row[2]) : -Infinity);
-  if (ratios.every((ratio) => ratio <= 0) || Math.abs(ratios[0] - ratios[1]) < 1e-9) return "hold";
-  return ratios[0] > ratios[1] ? "email" : "ads";
+  const winner = chooseChannel(rows.map(row => ({
+    name: row[0] as "Email" | "Ads",
+    revenue: Number(row[1]),
+    spend: Number(row[2]),
+  })));
+  return winner === "Email" ? "email" : winner === "Ads" ? "ads" : "hold";
 }
 
 export function previewLessonValue(lessonId: string, rows: Row[], formula: string): LessonPreview {

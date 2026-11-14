@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { chooseChannel } from "../src/decision";
 import { evaluateLesson, expectedDecision, previewLessonValue } from "../src/learning/engine";
 import { LESSONS, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, shuffleOptions, validateLessonRows, type LessonInput } from "../src/learning/model";
 
@@ -8,6 +9,21 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("uses positive unrounded channel ratios and a 1e-9 tie tolerance", () => {
+    const choose = (revenue: number, spend: number, otherRevenue: number, otherSpend: number) => chooseChannel([
+      { name: "Email", revenue, spend },
+      { name: "Ads", revenue: otherRevenue, spend: otherSpend },
+    ]);
+    expect(choose(1500, 500, 1800, 600)).toBe("hold");
+    expect(choose(0, 0, 0, 0)).toBe("hold");
+    expect(choose(900, 0, 1800, 600)).toBe("Ads");
+    expect(choose(800, 1000, 1600, 2000)).toBe("hold");
+    expect(choose(100.004, 100, 100, 100)).toBe("Email");
+    expect(choose(1.0000000005, 1, 1, 1)).toBe("hold");
+    expect(choose(2.0000000005, 1, 2, 1)).toBe("hold");
+    expect(choose(2.000000002, 1, 2, 1)).toBe("Email");
+    expect(chooseChannel([])).toBe("hold");
+  });
   it("shuffles repeatably and distributes correct answers across every position", () => {
     for (const lesson of LESSONS) {
       expect(lesson.transfer.options).toHaveLength(4);
