@@ -17,6 +17,8 @@ npm run dev
 
 Open http://127.0.0.1:5173. No account is required. Progress stays in that browser's local storage. The learning dashboard is at `/`, progress at `/#progress`, and assignments at `/#lesson/<id>`. Saved reviews have their own hash routes. The earlier connected assessment remains at `/#trial` and the guided exercise at `/#practice`; their saved data is retained separately.
 
+Learning results merge between tabs by review ID; draft updates are saved after 300 ms and flushed when the page is hidden or left. Completed attempts and hint use survive conflicts. Unknown future storage versions are left untouched.
+
 If browser storage is unavailable, an in-memory fallback preserves both drafts while switching exercises in the same open page. Reloading or closing that page can lose unsaved changes; the app displays a warning when durable saving fails.
 
 ## Demonstrate the learning product
@@ -67,7 +69,7 @@ npm run preview
 
 Browser tests use Playwright’s bundled Chromium by default. For installed Google Chrome, run `PW_CHANNEL=chrome npm run test:e2e` (the smoke script accepts the same variable). To include Firefox and WebKit, install them with `npx playwright install firefox webkit` and run `PW_ALL_BROWSERS=1 npm run test:e2e`. Unit tests cover calculation, alternative valid formulas, invalid input, hardcoded answers, linked channel metrics, changing recommendations and persistence. Browser tests cover both complete learner flows, failed submissions, repair, reload, download, fresh assignments, hints, mobile width, reset and navigation.
 
-For the latest checks and limitations, see [QA_REPORT.md](QA_REPORT.md). To test a running production preview instead of the development server:
+For the latest phase checks, commit references, failures and limitations, see [PHASE_2_REPORT.md](PHASE_2_REPORT.md). Earlier checks remain in [QA_REPORT.md](QA_REPORT.md). To test a running production preview instead of the development server:
 
 ```sh
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run test:e2e -- --workers=1
