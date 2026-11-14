@@ -28,7 +28,11 @@ If browser storage is unavailable, an in-memory fallback preserves both drafts w
 5. The review awards 20 points for diagnosis, up to 50 for repair and 30 for transfer. A hardcoded `=1200` fails the varied datasets.
 6. A weak result recommends the other revenue case (refunds); a successful result advances the route. Change languages or reload to verify saved drafts and results.
 
-The other cases cover weighted conversion, profit contribution versus sales volume, refunded orders, an omitted channel, and holding budget when returns do not justify spending. Completion badges require successful repair and transfer with at least 80 points; a submission alone does not count as passing. These thresholds describe this exercise, not proven skill mastery.
+The other cases cover weighted conversion, profit contribution versus sales volume, refunded orders, an omitted channel, and holding budget when returns do not justify spending. Completion badges require successful repair and transfer with at least 80 points and no revealed solution; a submission alone does not count as passing. These thresholds describe this exercise, not proven skill mastery.
+
+Hints reveal an idea first, then the structure. The full solution requires confirmation, caps repair credit at 25/50 and makes the attempt practice-only. Diagnosis and transfer choices shuffle once per attempt; transfer questions have four options. Numeric cell input accepts `12,5`, `12.5` and `2 300`; ambiguous `2,300` or `2.300` asks for an ungrouped number instead of silently changing its value.
+
+The Phase 1 correction report, exact checks and local commits are in [PHASE_1_REPORT.md](PHASE_1_REPORT.md). Later phases are awaiting the review gate in [CODEX_TASKS.md](CODEX_TASKS.md).
 
 ## Earlier work trial (`/#trial`)
 

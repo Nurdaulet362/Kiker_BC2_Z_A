@@ -24,6 +24,8 @@ The default route is a learning dashboard with six bilingual cases in three skil
 Product name is Fix the Report. The owner explicitly rejected the earlier interface and authorized a full rebuild. The new learning studio uses warm white, coral actions, blue-gray type and sage/sky/ochre skill illustrations. See REDESIGN.md for the new product and visual contract; DESIGN.md retains legacy styling details for the earlier routes.
 
 ## Product Principles
+
+Phase 1 learning rules: hints progress through idea, structure and a confirmed full solution. A revealed solution limits repair credit to 25/50 and cannot count as successful completion. Results preserve score components and hint use. Diagnosis/transfer options have a stable per-attempt shuffle, transfer questions have four options, and attempt counters survive trimming the visible history. See PHASE_1_REPORT.md for verification.
 - Correctness is demonstrated through user-controlled data.
 - Explain the business rule before testing it.
 - Preserve the learner's progress and make retries easy.
