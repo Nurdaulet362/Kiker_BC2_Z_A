@@ -40,21 +40,31 @@ export function mergeLearning(a: LearningState, b: LearningState): LearningState
     const prior = byId.get(result.id);
     byId.set(result.id, prior ? mergeResult(prior, result) : result);
   }
-  for (const [id, result] of byId) byId.set(id, withHints(result, result.solutionRevealed ? 3 : result.hintLevel));
+  const normalized = [...byId.values()].map(result => withHints(result, result.solutionRevealed ? 3 : result.hintLevel));
+  const hintEvidence = new Map<string, HintLevel>();
+  const completed = new Map<string, number>();
+  const evidenceKey = (lessonId: string, attempt: number) => `${lessonId}:${attempt}`;
+  const recordEvidence = (lessonId: string, attempt: number, level: HintLevel) => {
+    const key = evidenceKey(lessonId, attempt);
+    hintEvidence.set(key, Math.max(hintEvidence.get(key) ?? 0, level) as HintLevel);
+  };
+  for (const result of normalized) {
+    if (result.attempt === undefined) continue;
+    recordEvidence(result.lessonId, result.attempt, result.hintLevel);
+    completed.set(result.lessonId, Math.max(completed.get(result.lessonId) ?? 0, result.attempt));
+  }
+  for (const state of [a, b]) {
+    for (const [lessonId, draft] of Object.entries(state.drafts)) recordEvidence(lessonId, draft.attempt, draft.hintLevel);
+  }
+  const reconciled = normalized.map(result => result.attempt === undefined ? result
+    : withHints(result, hintEvidence.get(evidenceKey(result.lessonId, result.attempt)) ?? result.hintLevel));
   const drafts: Record<string, LessonDraft> = {};
   const attempts: Record<string, number> = {};
   const closedAttempts: Record<string, number> = {};
   for (const lesson of LESSONS) {
     const id = lesson.id;
     const candidates = [a.drafts[id], b.drafts[id]].filter((d): d is LessonDraft => !!d);
-    let closed = Math.max(a.closedAttempts[id] ?? 0, b.closedAttempts[id] ?? 0);
-    for (const [resultId, result] of byId) {
-      if (result.lessonId !== id || result.attempt === undefined) continue;
-      closed = Math.max(closed, result.attempt);
-      const evidence = [...byId.values()].filter(r => r.lessonId === id && r.attempt === result.attempt);
-      const level = Math.max(result.hintLevel, ...evidence.map(r => r.solutionRevealed ? 3 : r.hintLevel), ...candidates.filter(d => d.attempt === result.attempt).map(d => d.hintLevel)) as HintLevel;
-      byId.set(resultId, withHints(result, level));
-    }
+    const closed = Math.max(a.closedAttempts[id] ?? 0, b.closedAttempts[id] ?? 0, completed.get(id) ?? 0);
     if (closed > 0) closedAttempts[id] = closed;
     candidates.sort((left, right) => left.attempt - right.attempt
       || timestamp(left.updatedAt) - timestamp(right.updatedAt)
@@ -70,7 +80,7 @@ export function mergeLearning(a: LearningState, b: LearningState): LearningState
   const goalOwner = timestamp(a.goalUpdatedAt) === timestamp(b.goalUpdatedAt)
     ? lexical(a.goal, b.goal) >= 0 ? a : b
     : timestamp(a.goalUpdatedAt) > timestamp(b.goalUpdatedAt) ? a : b;
-  const results = [...byId.values()].sort((left, right) => timestamp(left.at) - timestamp(right.at) || lexical(left.id, right.id)).slice(-MAX_RESULTS);
+  const results = reconciled.sort((left, right) => timestamp(left.at) - timestamp(right.at) || lexical(left.id, right.id)).slice(-MAX_RESULTS);
   return {
     version: 2, results, drafts, attempts, closedAttempts, goal: goalOwner.goal,
     ...(goalOwner.goalUpdatedAt ? { goalUpdatedAt: goalOwner.goalUpdatedAt } : {}),
