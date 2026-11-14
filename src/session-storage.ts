@@ -1,3 +1,5 @@
+export type SaveStatus = "ok" | "unavailable" | "future-version";
+
 type StoragePolicy = {
   version: number;
   merge?: (current: string | null, incoming: string) => string;
@@ -10,13 +12,14 @@ const backupSources = new Map<string, string>();
 const policies = new Map<string, StoragePolicy>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 const listeners = new Map<string, Set<() => void>>();
-const saveListeners = new Map<string, Set<(failed: boolean) => void>>();
-const saveFailures = new Map<string, boolean>();
+const saveListeners = new Map<string, Set<(status: SaveStatus) => void>>();
+const saveStates = new Map<string, SaveStatus>();
+const knownKeys = new Set<string>();
 
-function saveStatus(key: string, failed: boolean): void {
-  if ((saveFailures.get(key) ?? false) === failed) return;
-  saveFailures.set(key, failed);
-  saveListeners.get(key)?.forEach(listener => listener(failed));
+function saveStatus(key: string, status: SaveStatus): void {
+  if ((saveStates.get(key) ?? "ok") === status) return;
+  saveStates.set(key, status);
+  saveListeners.get(key)?.forEach(listener => listener(status));
 }
 
 function publish(key: string, value: string | null, notify = true): void {
@@ -52,7 +55,7 @@ function physicalValue(key: string): { value: string | null } | null {
   try {
     return { value: localStorage.getItem(key) };
   } catch {
-    saveStatus(key, true);
+    saveStatus(key, "unavailable");
     return null;
   }
 }
@@ -69,7 +72,7 @@ function flushKey(key: string): void {
   if (!physical) return;
   // Recheck the durable version, including another tab's write after our edit.
   if (futureVersion(key, physical.value)) {
-    saveStatus(key, true);
+    saveStatus(key, "future-version");
     return;
   }
   try {
@@ -86,28 +89,30 @@ function flushKey(key: string): void {
     backupSources.delete(key);
     pending.delete(key);
     publish(key, merged);
-    saveStatus(key, false);
+    saveStatus(key, "ok");
   } catch {
-    saveStatus(key, true);
+    saveStatus(key, "unavailable");
   }
 }
 
 export function configureSessionItem(key: string, policy: StoragePolicy): void {
+  knownKeys.add(key);
   policies.set(key, policy);
   const cached = sessionItems.get(key);
   if (cached && futureVersion(key, cached)) {
     clearTimer(key);
     pending.delete(key);
     publish(key, null);
-    saveStatus(key, true);
+    saveStatus(key, "future-version");
   }
 }
 
 export function readSessionItem(key: string): string | null {
+  knownKeys.add(key);
   const physical = physicalValue(key);
   if (!physical) return sessionItems.get(key) ?? pending.get(key) ?? null;
   if (futureVersion(key, physical.value)) {
-    saveStatus(key, true);
+    saveStatus(key, "future-version");
     if (!sessionItems.has(key)) publish(key, null);
     return sessionItems.get(key) ?? null;
   }
@@ -123,22 +128,24 @@ export function readSessionItem(key: string): string | null {
     else {
       pending.delete(key);
       clearTimer(key);
-      saveStatus(key, false);
+      saveStatus(key, "ok");
     }
     publish(key, value);
     return value;
   } catch {
-    saveStatus(key, true);
+    saveStatus(key, "unavailable");
     return sessionItems.get(key) ?? pending.get(key) ?? null;
   }
 }
 
 export function getSessionItem(key: string): string | null {
+  knownKeys.add(key);
   return sessionItems.has(key) ? sessionItems.get(key)! : readSessionItem(key);
 }
 
 export function setSessionItem(key: string, value: string): void {
-  if (sessionItems.get(key) === value && !saveFailures.get(key)) return;
+  knownKeys.add(key);
+  if (sessionItems.get(key) === value && (saveStates.get(key) ?? "ok") === "ok") return;
   // Keep the original queued bytes until reconciliation, including records a
   // stricter validator may reject. No disk read, parse or merge per keystroke.
   queue(key, value, true);
@@ -146,6 +153,7 @@ export function setSessionItem(key: string, value: string): void {
 }
 
 export function subscribe(key: string, callback: () => void): () => void {
+  knownKeys.add(key);
   const callbacks = listeners.get(key) ?? new Set();
   callbacks.add(callback);
   listeners.set(key, callbacks);
@@ -155,11 +163,12 @@ export function subscribe(key: string, callback: () => void): () => void {
   };
 }
 
-export function subscribeSaveStatus(key: string, callback: (failed: boolean) => void): () => void {
+export function subscribeSaveStatus(key: string, callback: (status: SaveStatus) => void): () => void {
+  knownKeys.add(key);
   const callbacks = saveListeners.get(key) ?? new Set();
   callbacks.add(callback);
   saveListeners.set(key, callbacks);
-  callback(saveFailures.get(key) ?? false);
+  callback(saveStates.get(key) ?? "ok");
   return () => {
     callbacks.delete(callback);
     if (!callbacks.size) saveListeners.delete(key);
@@ -172,13 +181,15 @@ export function flushSessionItems(): void {
 
 if (typeof window !== "undefined") {
   window.addEventListener("storage", event => {
+    // Only app-registered keys may enter the cache. Backup writes are not registered.
+    if (event.key !== null && !knownKeys.has(event.key)) return;
     try {
       if (event.storageArea !== null && event.storageArea !== localStorage) return;
     } catch {
       return;
     }
     const keys = event.key === null
-      ? new Set([...sessionItems.keys(), ...pending.keys(), ...policies.keys(), ...listeners.keys()])
+      ? [...knownKeys]
       : [event.key];
     for (const key of keys) readSessionItem(key);
   });

@@ -1,13 +1,15 @@
+import { FUTURE_VERSION_WARNING } from "../storage-messages";
 import { formulaIssue, type FormulaIssue } from "../formula-errors";
 import { useErrorTranslation } from "../i18n";
 import {
   feedback,
   LanguageSwitcher,
+  LanguageContext,
   LocalizedText,
   useTranslation,
   type Translate,
 } from "../i18n";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -29,7 +31,7 @@ import {
 } from "lucide-react";
 import { Modal } from "../App";
 import { money, STATUSES, type Status } from "../model";
-import { configureSessionItem, getSessionItem, setSessionItem, subscribeSaveStatus } from "../session-storage";
+import { configureSessionItem, getSessionItem, setSessionItem, subscribeSaveStatus, type SaveStatus } from "../session-storage";
 import type { Preview } from "./evaluate";
 import {
   CHANNELS,
@@ -142,6 +144,7 @@ configureSessionItem(TRIAL_KEY, { version: 1 });
 
 export function Simulation() {
   const t = useTranslation();
+  const { language } = useContext(LanguageContext);
   const errorText = useErrorTranslation();
   const [state, setState] = useState<TrialState>(() => {
     try {
@@ -154,8 +157,8 @@ export function Simulation() {
   const [calculating, setCalculating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<FormulaIssue | null>(null);
-  const [saveError, setSaveError] = useState(false);
-  useEffect(() => subscribeSaveStatus(TRIAL_KEY, setSaveError), []);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("ok");
+  useEffect(() => subscribeSaveStatus(TRIAL_KEY, setSaveStatus), []);
   const [dialog, setDialog] = useState<"help" | "restore" | "new" | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const taskHeading = useRef<HTMLHeadingElement>(null);
@@ -172,7 +175,7 @@ export function Simulation() {
     try {
       setSessionItem(TRIAL_KEY, JSON.stringify(state));
     } catch {
-      setSaveError(true);
+      setSaveStatus("unavailable");
     }
   }, [state]);
   useEffect(() => {
@@ -327,9 +330,9 @@ export function Simulation() {
         </nav>
       </header>
       <main className="sim-main">
-        {saveError && (
+        {saveStatus !== "ok" && (
           <p className="sim-error" role="status">
-            {t(
+            {saveStatus === "future-version" ? FUTURE_VERSION_WARNING[language] : t(
               "Your browser cannot save this session. Keep the tab open to preserve your work.",
             )}{" "}
           </p>
@@ -1197,7 +1200,9 @@ export function Simulation() {
               </button>
               <p className="sim-autosave">
                 <ShieldCheck size={14} />
-                {saveError
+                {saveStatus === "future-version"
+                  ? FUTURE_VERSION_WARNING[language]
+                  : saveStatus === "unavailable"
                   ? t("Saving unavailable in this browser")
                   : t(
                       "Your formulas, edits and decisions are saved in this browser.",

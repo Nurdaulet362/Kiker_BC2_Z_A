@@ -125,17 +125,17 @@ describe("debounced, synchronized session storage", () => {
     const api = await import("../src/session-storage");
     const status = vi.fn();
     const unsubscribe = api.subscribeSaveStatus("draft", status);
-    expect(status).toHaveBeenLastCalledWith(false);
+    expect(status).toHaveBeenLastCalledWith("ok");
     storage.setItem.mockImplementationOnce(() => { throw new Error("Quota exceeded"); });
     api.setSessionItem("draft", "keep me");
     expect(status).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(300);
-    expect(status).toHaveBeenLastCalledWith(true);
+    expect(status).toHaveBeenLastCalledWith("unavailable");
     expect(api.getSessionItem("draft")).toBe("keep me");
     expect(api.readSessionItem("draft")).toBe("keep me");
     api.flushSessionItems();
     expect(storage.values.get("draft")).toBe("keep me");
-    expect(status).toHaveBeenLastCalledWith(false);
+    expect(status).toHaveBeenLastCalledWith("ok");
     unsubscribe();
     storage.setItem.mockImplementationOnce(() => { throw new Error("Quota exceeded again"); });
     api.setSessionItem("draft", "later");
@@ -181,6 +181,76 @@ describe("debounced, synchronized session storage", () => {
     await vi.advanceTimersByTimeAsync(300);
     expect(storage.values.get("trial")).toBe(future);
     expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
+  it("distinguishes unavailable storage from a future version and reports recovery", async () => {
+    const api = await import("../src/session-storage");
+    api.configureSessionItem("learning", policy);
+    const status = vi.fn();
+    api.subscribeSaveStatus("learning", status);
+    storage.getItem.mockImplementationOnce(() => { throw new Error("Unavailable"); });
+    expect(api.readSessionItem("learning")).toBeNull();
+    expect(status).toHaveBeenLastCalledWith("unavailable");
+    const future = '{ "version": 99, "futureData": "untouched" }';
+    storage.values.set("learning", future);
+    expect(api.readSessionItem("learning")).toBeNull();
+    expect(status).toHaveBeenLastCalledWith("future-version");
+    api.setSessionItem("learning", encode("local"));
+    api.flushSessionItems();
+    expect(storage.values.get("learning")).toBe(future);
+    expect(status).toHaveBeenLastCalledWith("future-version");
+    storage.values.set("learning", encode());
+    api.flushSessionItems();
+    expect(storage.values.get("learning")).toBe(encode("local"));
+    expect(status.mock.calls.map(([value]) => value)).toEqual(["ok", "unavailable", "future-version", "ok"]);
+  });
+
+  it("reports a future version discovered when a previously read key is configured", async () => {
+    const api = await import("../src/session-storage");
+    const future = JSON.stringify({ version: 99 });
+    storage.values.set("learning", future);
+    expect(api.getSessionItem("learning")).toBe(future);
+    api.configureSessionItem("learning", policy);
+    const status = vi.fn();
+    api.subscribeSaveStatus("learning", status);
+    expect(status).toHaveBeenLastCalledWith("future-version");
+    expect(api.getSessionItem("learning")).toBeNull();
+    expect(storage.values.get("learning")).toBe(future);
+  });
+
+  it("ignores unknown and backup storage events without reading, caching or changing save status", async () => {
+    const api = await import("../src/session-storage");
+    api.configureSessionItem("learning", policy);
+    storage.values.set("learning", encode());
+    storage.values.set("unrelated", "old");
+    storage.values.set("learning.backup", '{"version":99}');
+    const status = vi.fn();
+    api.subscribeSaveStatus("learning", status);
+    storageEvent("unrelated");
+    storageEvent("learning.backup");
+    expect(storage.getItem).not.toHaveBeenCalled();
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(status.mock.calls).toEqual([["ok"]]);
+    storageEvent(null);
+    expect(storage.getItem.mock.calls).toEqual([["learning"]]);
+    expect(storage.setItem).not.toHaveBeenCalled();
+    storage.values.set("unrelated", "new");
+    // An explicit first read sees the new value, proving the foreign event did not cache it.
+    expect(api.getSessionItem("unrelated")).toBe("new");
+    expect(storage.getItem.mock.calls).toEqual([["learning"], ["unrelated"]]);
+  });
+
+  it.each(["configure", "read", "get", "set", "subscribe", "status"])("recognizes keys explicitly registered by %s", async operation => {
+    const api = await import("../src/session-storage");
+    if (operation === "configure") api.configureSessionItem("known", { version: 1 });
+    if (operation === "read") api.readSessionItem("known");
+    if (operation === "get") api.getSessionItem("known");
+    if (operation === "set") api.setSessionItem("known", "pending");
+    if (operation === "subscribe") api.subscribe("known", () => {});
+    if (operation === "status") api.subscribeSaveStatus("known", () => {});
+    storage.getItem.mockClear();
+    storageEvent("known");
+    expect(storage.getItem).toHaveBeenCalledExactlyOnceWith("known");
   });
 
   it("merges fresh durable data with an unsaved local edit before writing", async () => {

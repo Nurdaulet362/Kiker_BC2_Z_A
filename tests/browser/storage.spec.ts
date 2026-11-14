@@ -1,3 +1,4 @@
+import { FUTURE_VERSION_WARNING } from "../../src/storage-messages";
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS, type Lesson } from "../../src/learning/model";
 
@@ -83,7 +84,12 @@ for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#tria
     } else {
       await page.getByRole("button", { name: "Add order", exact: true }).click();
     }
-    await expect(page.getByRole("status").filter({ hasText: /cannot save|Хранилище/ })).toBeVisible();
+    await page.getByRole("button", { name: "Русский", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: FUTURE_VERSION_WARNING.ru })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: /Хранилище браузера недоступно|не может сохранить/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "English", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: FUTURE_VERSION_WARNING.en })).toBeVisible();
+    await expect(page.getByText("Saving unavailable in this browser", { exact: true })).toHaveCount(0);
     expect(await page.evaluate(k => localStorage.getItem(k), storageKey)).toBe(future);
     await page.reload();
     expect(await page.evaluate(k => localStorage.getItem(k), storageKey)).toBe(future);

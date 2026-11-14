@@ -1,7 +1,8 @@
+import { FUTURE_VERSION_WARNING } from "../storage-messages";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, BookOpen, Check, CheckCheck, ChevronRight, Clock3, Compass, FileCheck2, Flag, Layers3, Lightbulb, Menu, Target, TrendingUp, X } from "lucide-react";
 import { LanguageContext, LanguageSwitcher } from "../i18n";
-import { configureSessionItem, getSessionItem, readSessionItem, setSessionItem, subscribe, subscribeSaveStatus } from "../session-storage";
+import { configureSessionItem, getSessionItem, readSessionItem, setSessionItem, subscribe, subscribeSaveStatus, type SaveStatus } from "../session-storage";
 import { LESSONS, SKILLS, LEARNING_KEY, findLessonResult, setLearningGoal, beginLesson, nextLessonAttempt, saveLessonDraft, initialDraft, initialLearning, isLessonComplete, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
 import { needsLearningBackup } from "./storage-backup";
 import { mergeLearning, mergeLearningJSON, prepareLessonInput, recordLessonResult } from "./persistence";
@@ -41,7 +42,7 @@ export function LearningApp() {
   const [menu, setMenu] = useState(false);
   const [mobile, setMobile] = useState(() => matchMedia("(max-width: 800px)").matches);
   const sidebar = useRef<HTMLElement>(null);
-  const [saveError, setSaveError] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("ok");
   const main = useRef<HTMLElement>(null);
   useEffect(() => {
     const media = matchMedia("(max-width: 800px)");
@@ -79,12 +80,12 @@ export function LearningApp() {
         return JSON.stringify(next) === JSON.stringify(previous) ? previous : next;
       });
     });
-    const unsubscribeStatus = subscribeSaveStatus(LEARNING_KEY, setSaveError);
+    const unsubscribeStatus = subscribeSaveStatus(LEARNING_KEY, setSaveStatus);
     return () => { unsubscribe(); unsubscribeStatus(); };
   }, []);
   useEffect(() => {
     try { setSessionItem(LEARNING_KEY, JSON.stringify(state)); }
-    catch { setSaveError(true); }
+    catch { setSaveStatus("unavailable"); }
   }, [state]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -135,7 +136,7 @@ export function LearningApp() {
     <div className="learn-body" inert={mobile && menu}>
       <header className="learn-topbar"><div className="learn-topbar-left"><button className="learn-mobile-menu" aria-label={c("Toggle navigation", "Открыть меню")} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={20} /> : <Menu size={20} />}</button><span>{c("Workspace", "Личный кабинет")}</span><ChevronRight size={13} /><b>{isProgress ? c("Progress", "Прогресс") : activeLesson ? c("Practice", "Практика") : result ? c("Lesson review", "Разбор занятия") : c("Learning", "Обучение")}</b></div><div className="learn-topbar-right"><LanguageSwitcher /><div className="learn-profile"><span>{c("L", "У")}</span><div>{c("Your workspace", "Ваш кабинет")}<small>{c("Learning without an account", "Можно учиться без регистрации")}</small></div></div></div></header>
       <main className="learn-main" id="learning-main" ref={main} tabIndex={-1}>
-        {saveError && <p className="learn-save-warning" role="status">{c("Browser storage is unavailable. Your progress stays in this tab until you close or reload it.", "Хранилище браузера недоступно. Прогресс сохранится только в этой вкладке до закрытия или перезагрузки.")}</p>}
+        {saveStatus !== "ok" && <p className="learn-save-warning" role="status">{saveStatus === "future-version" ? FUTURE_VERSION_WARNING[language] : c("Browser storage is unavailable. Your progress stays in this tab until you close or reload it.", "Хранилище браузера недоступно. Прогресс сохранится только в этой вкладке до закрытия или перезагрузки.")}</p>}
         {activeLesson ? <Workspace key={activeLesson.id} lesson={activeLesson} draft={state.drafts[activeLesson.id] ?? initialDraft(activeLesson.id, nextLessonAttempt(state, activeLesson.id))} onDraft={(draft: LessonDraft) => setState(previous => saveLessonDraft(previous, activeLesson.id, draft))} onPrepare={input => prepareLessonInput(mergeLearning(state, restoreLearning(readSessionItem(LEARNING_KEY))), input)} onComplete={submission => { const saved = restoreLearning(readSessionItem(LEARNING_KEY)); setState(previous => recordLessonResult(mergeLearning(previous, saved), submission)); navigate(`review/${submission.id}`); }} onExit={() => navigate("learn")} language={language} /> : result && reviewedLesson ? <LessonReview lesson={reviewedLesson} result={result} recommendation={recommended} onStart={start} onHome={() => navigate("learn")} language={language} /> : isProgress ? <>
           <div className="learn-page-heading"><div><p className="learn-eyebrow">{c("EVERY ATTEMPT COUNTS", "КАЖДАЯ ПОПЫТКА — ЭТО ОПЫТ")}</p><h1 tabIndex={-1}>{c("See how far you’ve come", "Ваш прогресс в деталях")}</h1><p>{c("Find your strengths and choose what to practice next.", "Посмотрите, что уже получается и чему уделить внимание.")}</p></div></div>
           <div className="learn-progress-summary"><div><span>{c("Completed lessons", "Пройдено занятий")}</span><strong>{completed.size}<small> / {LESSONS.length}</small></strong></div><div><span>{c("Total attempts", "Всего попыток")}</span><strong>{state.results.length}</strong></div><div><span>{c("Skills practiced", "Навыков в работе")}</span><strong>{SKILLS.filter(skill => skillScore(skill.id) !== undefined).length}<small> / 3</small></strong></div></div>

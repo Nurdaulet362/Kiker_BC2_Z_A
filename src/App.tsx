@@ -1,12 +1,14 @@
+import { FUTURE_VERSION_WARNING } from "./storage-messages";
 import { formulaIssue, type FormulaIssue } from "./formula-errors";
 import { useErrorTranslation } from "./i18n";
 import {
   feedback,
   LanguageSwitcher,
+  LanguageContext,
   LocalizedText,
   useTranslation,
 } from "./i18n";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -46,7 +48,7 @@ import {
 } from "./model";
 import type { Calculation, Check as FormulaCheck } from "./formula";
 import { runCalculation } from "./worker-client";
-import { configureSessionItem, getSessionItem, setSessionItem, subscribeSaveStatus } from "./session-storage";
+import { configureSessionItem, getSessionItem, setSessionItem, subscribeSaveStatus, type SaveStatus } from "./session-storage";
 
 type Inspection = { kind: "match" | "found" | "error"; message: string };
 const hints = [
@@ -120,6 +122,7 @@ configureSessionItem(STORAGE_KEY, { version: 1 });
 
 export function App() {
   const t = useTranslation();
+  const { language } = useContext(LanguageContext);
   const errorText = useErrorTranslation();
   const [progress, setProgress] = useState<Progress>(() => {
     try {
@@ -128,8 +131,8 @@ export function App() {
       return initialProgress();
     }
   });
-  const [saveError, setSaveError] = useState(false);
-  useEffect(() => subscribeSaveStatus(STORAGE_KEY, setSaveError), []);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("ok");
+  useEffect(() => subscribeSaveStatus(STORAGE_KEY, setSaveStatus), []);
   const [calculation, setCalculation] = useState<Calculation | null>(null);
   const [calculating, setCalculating] = useState(true);
   const [inspection, setInspection] = useState<Inspection | null>(null);
@@ -157,7 +160,7 @@ export function App() {
     try {
       setSessionItem(STORAGE_KEY, JSON.stringify(progress));
     } catch {
-      setSaveError(true);
+      setSaveStatus("unavailable");
     }
   }, [progress]);
 
@@ -382,9 +385,9 @@ export function App() {
             <ArrowLeft size={14} />
             {t("Back to work simulations")}{" "}
           </a>
-          {saveError && (
+          {saveStatus !== "ok" && (
             <div role="status" className="notice warning">
-              {t(
+              {saveStatus === "future-version" ? FUTURE_VERSION_WARNING[language] : t(
                 "Your browser cannot save progress. Keep this tab open to continue your session.",
               )}{" "}
             </div>
