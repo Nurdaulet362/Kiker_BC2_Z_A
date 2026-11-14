@@ -6,6 +6,7 @@ type StoragePolicy = {
 
 const sessionItems = new Map<string, string | null>();
 const pending = new Map<string, string>();
+const backupSources = new Map<string, string>();
 const policies = new Map<string, StoragePolicy>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 const listeners = new Map<string, Set<() => void>>();
@@ -73,16 +74,16 @@ function flushKey(key: string): void {
   }
   try {
     const merged = mergeValue(key, physical.value, incoming);
-    if (merged !== physical.value) {
-      const needsBackup = policies.get(key)?.needsBackup;
-      // Prefer the durable source when both inputs lose data: the backup is
-      // deliberately one slot. A failed backup write must abort replacement.
-      const original = needsBackup ? [physical.value, incoming].find(
-        (source): source is string => source !== null && needsBackup(source, merged),
-      ) : undefined;
-      if (original !== undefined) localStorage.setItem(`${key}.backup`, original);
-      localStorage.setItem(key, merged);
-    }
+    const needsBackup = policies.get(key)?.needsBackup;
+    // Prefer durable bytes when both inputs lose data; keep one backup slot.
+    const original = needsBackup ? [physical.value, backupSources.get(key), incoming].find(
+      (source): source is string => typeof source === "string" && needsBackup(source, merged),
+    ) : undefined;
+    // Even an unchanged primary value may have filtered an invalid local input.
+    // Backup failure aborts replacement and leaves all pending memory intact.
+    if (original !== undefined) localStorage.setItem(`${key}.backup`, original);
+    if (merged !== physical.value) localStorage.setItem(key, merged);
+    backupSources.delete(key);
     pending.delete(key);
     publish(key, merged);
     saveStatus(key, false);
@@ -116,7 +117,9 @@ export function readSessionItem(key: string): string | null {
     const value = policies.get(key)?.merge && local !== undefined && local !== null
       ? mergeValue(key, physical.value, local)
       : pending.get(key) ?? physical.value;
-    if (value !== null && value !== physical.value) queue(key, value);
+    const needsBackup = policies.get(key)?.needsBackup;
+    if (needsBackup && typeof local === "string" && value !== null && needsBackup(local, value)) backupSources.set(key, local);
+    if (value !== null && (value !== physical.value || backupSources.has(key))) queue(key, value);
     else {
       pending.delete(key);
       clearTimer(key);
@@ -135,18 +138,11 @@ export function getSessionItem(key: string): string | null {
 }
 
 export function setSessionItem(key: string, value: string): void {
-  const current = policies.get(key)?.merge ? readSessionItem(key) : getSessionItem(key);
-  try {
-    const merged = mergeValue(key, current, value);
-    if (sessionItems.get(key) === merged && !saveFailures.get(key)) return;
-    queue(key, merged, true);
-    publish(key, merged, false);
-  } catch {
-    // Preserve the newest edit in memory even if its merger rejects the data.
-    queue(key, value, true);
-    publish(key, value, false);
-    saveStatus(key, true);
-  }
+  if (sessionItems.get(key) === value && !saveFailures.get(key)) return;
+  // Keep the original queued bytes until reconciliation, including records a
+  // stricter validator may reject. No disk read, parse or merge per keystroke.
+  queue(key, value, true);
+  publish(key, value, false);
 }
 
 export function subscribe(key: string, callback: () => void): () => void {

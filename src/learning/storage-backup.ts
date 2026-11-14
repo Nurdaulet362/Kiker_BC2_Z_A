@@ -6,6 +6,7 @@ export function needsLearningBackup(source: string, merged: string): boolean {
   const restored = restoreLearning(source, audit);
   if (audit.discarded) return true;
   const next = restoreLearning(merged);
+  if (restored.results.length > next.results.length) return true;
   const ids = new Set(next.results.map(result => result.id));
   if (restored.results.some(result => !ids.has(result.id))) return true;
   // Closing or superseding a draft also removes a record. Keep its original

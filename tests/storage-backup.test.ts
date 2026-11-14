@@ -54,6 +54,7 @@ describe("backup before filtering saved learning data", () => {
     expect(values.get(`${key}.backup`)).toBe(first);
     const second = JSON.stringify({ ...initialLearning(), results: [null] });
     values.set(key, second);
+    api.readSessionItem(key); // Reconcile the external write before saving the same UI value.
     api.setSessionItem(key, JSON.stringify(initialLearning()));
     api.flushSessionItems();
     expect(values.get(`${key}.backup`)).toBe(second);
@@ -85,4 +86,14 @@ describe("backup before filtering saved learning data", () => {
     expect(values.get(key)).toBe(future);
     expect(values.get(`${key}.backup`)).toBe("previous backup");
   });
+});
+
+it.each([false, true])("backs up invalid incoming bytes even when the primary value stays unchanged (fresh read: %s)", async freshRead => {
+  const api = await persist(JSON.stringify(initialLearning()));
+  const incoming = JSON.stringify({ ...initialLearning(), results: [null] }, null, 2);
+  api.setSessionItem(key, incoming);
+  if (freshRead) api.readSessionItem(key);
+  api.flushSessionItems();
+  expect(values.get(`${key}.backup`)).toBe(incoming);
+  expect(restoreLearning(values.get(key)!)).toEqual(initialLearning());
 });

@@ -209,3 +209,26 @@ describe("debounced, synchronized session storage", () => {
     expect(storage.setItem).toHaveBeenCalledTimes(writes);
   });
 });
+
+describe("cheap local enqueue", () => {
+  it("does not read storage or merge until flush", async () => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    const values = new Map<string, string>();
+    const storage = { getItem: vi.fn((key: string) => values.get(key) ?? null), setItem: vi.fn((key: string, value: string) => values.set(key, value)) };
+    vi.stubGlobal("localStorage", storage);
+    try {
+      const api = await import("../src/session-storage");
+      const merge = vi.fn((_current: string | null, incoming: string) => incoming);
+      api.configureSessionItem("local", { version: 2, merge });
+      for (let i = 0; i < 50; i += 1) api.setSessionItem("local", JSON.stringify({ version: 2, answer: i }));
+      expect(storage.getItem).not.toHaveBeenCalled();
+      expect(merge).not.toHaveBeenCalled();
+      expect(JSON.parse(api.getSessionItem("local")!).answer).toBe(49);
+      await vi.advanceTimersByTimeAsync(300);
+      expect(storage.getItem).toHaveBeenCalledTimes(1);
+      expect(merge).toHaveBeenCalledTimes(1);
+      expect(storage.setItem).toHaveBeenCalledTimes(1);
+    } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
+  });
+});
