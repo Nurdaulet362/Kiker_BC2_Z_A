@@ -20,6 +20,7 @@ import {
   formatLessonValue,
   getLesson,
   normalizeRows,
+  parseCellNumber,
   validateLessonRows,
   type Copy,
   type Lesson,
@@ -45,6 +46,7 @@ function readableError(message: string, language: Language) {
     "Use up to 100 data rows.": "В отчёте может быть не больше 100 строк данных.",
     "Check the report's row structure.": "Проверьте структуру строк отчёта.",
     "Enter numbers from 0 to 1,000,000.": "Введите числа от 0 до 1 000 000 во все числовые ячейки.",
+    "Enter a number without a thousands separator, for example 1000.": "Укажите число без разделителя тысяч, например 1000",
     "Leads and sales must be whole numbers.": "Число лидов и продаж должно быть целым.",
     "Use no more than two decimal places for money.": "Укажите денежные суммы с точностью до двух знаков после запятой.",
     "Choose Paid, Cancelled or Pending for each order.": "Для каждого заказа нужен статус Paid, Cancelled или Pending.",
@@ -138,8 +140,8 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
 
   function updateCell(row: number, column: number, value: string) {
     setCellEdits((previous) => ({ ...previous, [`${row}:${column}`]: value }));
-    const normalized = value.trim().replace(",", ".");
-    const number = normalized && /^\d*(\.\d*)?$/.test(normalized) && Number.isFinite(Number(normalized)) ? Number(normalized) : value;
+    const parsed = parseCellNumber(value);
+    const number = "value" in parsed ? parsed.value : value;
     const rows = draft.rows.map((cells, index) => index === row
       ? cells.map((cell, cellIndex) => cellIndex === column ? number : cell)
       : [...cells]);

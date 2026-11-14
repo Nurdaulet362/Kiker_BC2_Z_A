@@ -189,11 +189,27 @@ export function normalizeRows(lesson: Lesson, rows: Row[]): Row[] {
   });
 }
 
+export function parseCellNumber(raw: string):
+  | { value: number }
+  | { error: "ambiguous" | "invalid" } {
+  const compact = raw.trim().replace(/[ \u00a0\u202f]/g, "");
+  if (/^\d+[,.]\d{3}$/.test(compact)) return { error: "ambiguous" };
+  if (!/^\d+(?:[,.]\d{1,2})?$/.test(compact)) return { error: "invalid" };
+  const value = Number(compact.replace(",", "."));
+  return Number.isFinite(value) ? { value } : { error: "invalid" };
+}
+
 export function validateLessonRows(lesson: Lesson, rows: Row[]): string | null {
   if (!Array.isArray(rows) || rows.length > 100) return "Use up to 100 data rows.";
   for (const row of rows) {
     if (!Array.isArray(row) || row.length !== lesson.columns.length || typeof row[0] !== "string" || !row[0] || row[0].length > 80) return "Check the report's row structure.";
     for (const index of lesson.editableColumns) {
+      if (typeof row[index] === "string") {
+        const parsed = parseCellNumber(row[index] as string);
+        if ("error" in parsed && parsed.error === "ambiguous") {
+          return "Enter a number without a thousands separator, for example 1000.";
+        }
+      }
       if (typeof row[index] !== "number" || !Number.isFinite(row[index]) || Number(row[index]) < 0 || Number(row[index]) > 1_000_000) return "Enter numbers from 0 to 1,000,000.";
       if (lesson.skill === "conversion" || (lesson.skill === "decisions" && index === 3)) {
         if (!Number.isInteger(row[index])) return "Leads and sales must be whole numbers.";

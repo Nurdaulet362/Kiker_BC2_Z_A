@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateLesson, expectedDecision, previewLessonValue } from "../src/learning/engine";
-import { LESSONS, getLesson, initialDraft, initialLearning, normalizeRows, recommendLesson, restoreLearning, validateLessonRows, type LessonInput } from "../src/learning/model";
+import { LESSONS, getLesson, initialDraft, initialLearning, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, validateLessonRows, type LessonInput } from "../src/learning/model";
 
 function solution(id: string): LessonInput {
   const lesson = getLesson(id);
@@ -8,6 +8,22 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("parses decimal and space-grouped numbers without guessing ambiguous separators", () => {
+    for (const [raw, value] of [
+      ["12,5", 12.5], ["12.5", 12.5], ["12.50", 12.5],
+      ["1 000", 1000], ["1\u00a0000", 1000], ["1\u202f000", 1000],
+      ["1000", 1000], [" 2 300,25 ", 2300.25], ["0", 0],
+    ] as const) expect(parseCellNumber(raw), raw).toEqual({ value });
+    for (const raw of ["1,000", "1.000", "2,300"])
+      expect(parseCellNumber(raw), raw).toEqual({ error: "ambiguous" });
+    for (const raw of ["", " ", "1,000,000", "1.000,50", "12abc", "1e3", "12.", "12,", "-1"])
+      expect(parseCellNumber(raw), raw).toEqual({ error: "invalid" });
+    const lesson = getLesson("revenue-cancelled");
+    const rows = initialDraft(lesson.id).rows;
+    rows[2][2] = "2,300";
+    expect(validateLessonRows(lesson, rows)).toMatch(/without a thousands separator/);
+    expect(() => evaluateLesson({ ...solution(lesson.id), rows })).toThrow(/without a thousands separator/);
+  });
   it("verifies every intended solution against its report and independent edge cases", () => {
     for (const lesson of LESSONS) {
       const result = evaluateLesson(solution(lesson.id));

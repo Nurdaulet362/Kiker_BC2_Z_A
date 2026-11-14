@@ -32,6 +32,20 @@ async function expectNoOverflow(page: Page) {
   ).toBe(false);
 }
 
+test("an ambiguous thousands separator shows an error instead of changing the reported total", async ({ page }) => {
+  await startCancelled(page);
+  const amount = page.getByLabel("Сумма, $, строка 4", { exact: true });
+  await amount.fill("2,300");
+  await expect(page.getByRole("alert")).toContainText("Укажите число без разделителя тысяч, например 1000");
+  await expect(page.locator(".lr-output strong")).toHaveText("—");
+  await page.reload();
+  await expect(amount).toHaveValue("2,300");
+  await expect(page.getByRole("alert")).toContainText("Укажите число без разделителя тысяч");
+  await amount.fill("2 300");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.locator(".lr-output strong")).toHaveText(/3\s?680/);
+});
+
 test("a complete Russian lesson saves its review and starts the recommended case", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
