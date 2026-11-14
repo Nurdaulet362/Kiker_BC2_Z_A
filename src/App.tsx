@@ -38,6 +38,7 @@ import {
 } from "./model";
 import type { Calculation, Check as FormulaCheck } from "./formula";
 import { runCalculation } from "./worker-client";
+import { getSessionItem, setSessionItem } from "./session-storage";
 
 type Inspection = { kind: "match" | "found" | "error"; message: string };
 const hints = [
@@ -109,7 +110,7 @@ function Brand() {
 export function App() {
   const [progress, setProgress] = useState<Progress>(() => {
     try {
-      return restoreProgress(localStorage.getItem(STORAGE_KEY));
+      return restoreProgress(getSessionItem(STORAGE_KEY));
     } catch {
       return initialProgress();
     }
@@ -140,7 +141,7 @@ export function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      setSessionItem(STORAGE_KEY, JSON.stringify(progress));
       setSaveError(false);
     } catch {
       setSaveError(true);

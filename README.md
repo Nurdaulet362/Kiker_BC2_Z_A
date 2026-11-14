@@ -4,6 +4,8 @@ A browser-based work simulation for adults preparing for a sales operations asse
 
 The main experience, **The Friday revenue review**, connects revenue repair, overall conversion and an evidence-based budget-test recommendation. The learner submits work, gets a transparent review across three skills, practices gaps and retries on changed data. The earlier **The cancelled order** exercise remains available as guided practice.
 
+The repository also contains four developer skills adapted from the sources requested by the project owner. See [SKILLS.md](SKILLS.md) for provenance, installation, validation and their concrete application to the site.
+
 ## Run locally
 
 Use Node.js 22.12+ (Node 26 also works).
@@ -14,6 +16,8 @@ npm run dev
 ```
 
 Open http://127.0.0.1:5173. No account is required. Progress stays in that browser's local storage. The main assignment is at `/`; the guided lesson is at `/#practice`. `/?review=1#practice` opens the original Russian review dialog prepared for the project owner.
+
+If browser storage is unavailable, an in-memory fallback preserves both drafts while switching exercises in the same open page. Reloading or closing that page can lose unsaved changes; the app displays a warning when durable saving fails.
 
 ## Demonstrate the work trial
 

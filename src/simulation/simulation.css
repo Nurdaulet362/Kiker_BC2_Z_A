@@ -88,12 +88,25 @@
   font-weight: 600;
   text-wrap: balance;
 }
+.sim-eyebrow {
+  display: block;
+  color: var(--purple-dark);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
 .sim-hero-copy > p {
   font-size: 17px;
   line-height: 1.8;
   color: #646578;
   margin-top: 24px;
   max-width: 48ch;
+}
+.sim-hero-copy > .sim-proof-note {
+  margin-top: 20px;
+  color: #514962;
+  font-size: 13px;
+  line-height: 1.7;
 }
 .sim-hero-actions {
   margin-top: 30px;
@@ -209,6 +222,94 @@
   gap: 90px;
   padding: 40px 0;
   border-top: 1px solid var(--line);
+}
+.sim-outcomes {
+  border-top: 1px solid var(--line);
+  padding: 38px 0 42px;
+}
+.sim-outcomes h2,
+.sim-faq h2,
+.sim-closing-action h2 {
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+.sim-outcomes > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 36px;
+  margin-top: 28px;
+}
+.sim-outcomes article > svg {
+  color: #655489;
+  margin-bottom: 14px;
+}
+.sim-outcomes h3 {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.sim-outcomes p,
+.sim-faq p,
+.sim-closing-action p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 8px;
+}
+.sim-faq {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 56px;
+  padding: 48px 0 36px;
+}
+.sim-faq details {
+  border-bottom: 1px solid var(--line);
+  padding: 17px 0;
+}
+.sim-faq details:first-child {
+  padding-top: 0;
+}
+.sim-faq summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+.sim-faq details p {
+  padding-left: 17px;
+  max-width: 64ch;
+}
+.sim-faq a {
+  color: var(--purple-dark);
+}
+.sim-closing-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 34px;
+}
+.sim-closing-action .primary-button {
+  flex-shrink: 0;
+}
+@media (max-width: 760px) {
+  .sim-outcomes > div {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  .sim-outcomes article > svg {
+    margin-bottom: 8px;
+  }
+  .sim-faq {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .sim-closing-action {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 .sim-overview h2 {
   font-size: 25px;

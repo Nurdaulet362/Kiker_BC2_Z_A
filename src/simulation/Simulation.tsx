@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Modal } from "../App";
 import { money, STATUSES, type Status } from "../model";
+import { getSessionItem, setSessionItem } from "../session-storage";
 import type { Preview } from "./evaluate";
 import {
   CHANNELS,
@@ -119,7 +120,7 @@ function downloadReview(state: TrialState, result: Submission) {
 export function Simulation() {
   const [state, setState] = useState<TrialState>(() => {
     try {
-      return restoreTrial(localStorage.getItem(TRIAL_KEY));
+      return restoreTrial(getSessionItem(TRIAL_KEY));
     } catch {
       return initialTrial();
     }
@@ -143,7 +144,7 @@ export function Simulation() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(TRIAL_KEY, JSON.stringify(state));
+      setSessionItem(TRIAL_KEY, JSON.stringify(state));
       setSaveError(false);
     } catch {
       setSaveError(true);
@@ -310,15 +311,18 @@ export function Simulation() {
           <>
             <section className="sim-hero">
               <div className="sim-hero-copy">
+                <span className="sim-eyebrow">
+                  Sales operations interview practice
+                </span>
                 <h1 ref={heading} tabIndex={-1}>
                   Your next interview
                   <br />
                   has a spreadsheet.
                 </h1>
                 <p>
-                  Rehearse the work before the real thing. Repair a flawed
-                  report, make a decision, and find out exactly what to practice
-                  next.
+                  Practice a spreadsheet assessment before your interview.
+                  Repair the numbers, recommend a budget test, and get specific
+                  feedback on what to improve.
                 </p>
                 <div className="sim-hero-actions">
                   <button className="primary-button" onClick={start}>
@@ -329,6 +333,9 @@ export function Simulation() {
                   </button>
                   <span>Free demo · no account needed</span>
                 </div>
+                <p className="sim-proof-note">
+                  Two formulas. One decision. 30 checks on your work.
+                </p>
                 <div className="sim-audience">
                   <BriefcaseBusiness size={18} />
                   <span>
@@ -371,6 +378,38 @@ export function Simulation() {
                   </div>
                   <ChevronRight size={17} />
                 </div>
+              </div>
+            </section>
+            <section
+              className="sim-outcomes"
+              aria-labelledby="outcomes-heading"
+            >
+              <h2 id="outcomes-heading">What you leave with.</h2>
+              <div>
+                <article>
+                  <FileSpreadsheet size={21} aria-hidden="true" />
+                  <h3>Formulas tested on new data</h3>
+                  <p>
+                    See which checks pass and which fail when order statuses,
+                    lead counts and rows change.
+                  </p>
+                </article>
+                <article>
+                  <BriefcaseBusiness size={21} aria-hidden="true" />
+                  <h3>A reason behind your decision</h3>
+                  <p>
+                    Compare revenue and acquisition costs, then explain which
+                    channel deserves a small test.
+                  </p>
+                </article>
+                <article>
+                  <Download size={21} aria-hidden="true" />
+                  <h3>A review you can keep</h3>
+                  <p>
+                    Download your results, work on the gaps and try again with a
+                    different set of numbers.
+                  </p>
+                </article>
               </div>
             </section>
             <section
@@ -425,6 +464,59 @@ export function Simulation() {
                 </button>
               </div>
             )}
+            <section className="sim-faq" aria-labelledby="faq-heading">
+              <div>
+                <h2 id="faq-heading">Before you start.</h2>
+                <p>A few details so you know what to expect.</p>
+              </div>
+              <div className="sim-faq-items">
+                <details>
+                  <summary>Do I need Excel or advanced formula skills?</summary>
+                  <p>
+                    Everything runs in this browser. Basic spreadsheet
+                    familiarity helps; worked hints are available if you get
+                    stuck. For a shorter introduction, try the{" "}
+                    <a href="#practice">guided cancelled-order lesson</a>.
+                  </p>
+                </details>
+                <details>
+                  <summary>What does my score tell me?</summary>
+                  <p>
+                    It shows how your work performed on 19 revenue checks, 8
+                    conversion checks and 3 decision checks. You can inspect the
+                    evidence and retry. It is an exercise result, not a
+                    certification or a prediction of getting hired.
+                  </p>
+                </details>
+                <details>
+                  <summary>Is it free, and will my progress be saved?</summary>
+                  <p>
+                    This demo is free and needs no account. Progress is saved in
+                    this browser when storage is available; it does not sync
+                    across devices. If saving is blocked, your work stays
+                    available while this page remains open, including when you
+                    switch exercises. Reloading or closing it can lose unsaved
+                    work.
+                  </p>
+                </details>
+              </div>
+            </section>
+            <section
+              className="sim-closing-action"
+              aria-labelledby="closing-heading"
+            >
+              <div>
+                <h2 id="closing-heading">Try the work before the interview.</h2>
+                <p>
+                  Start with a draft report. Leave knowing what to practice
+                  next.
+                </p>
+              </div>
+              <button className="primary-button" onClick={start}>
+                {state.startedAt ? "Continue my practice" : "Start my practice"}
+                <ArrowRight size={17} />
+              </button>
+            </section>
           </>
         ) : stage === "work" ? (
           <>

@@ -130,6 +130,42 @@ test("unavailable browser storage warns clearly and leaves the trial usable", as
   ).toBeVisible();
 });
 
+test("both exercise drafts survive route changes when browser storage is blocked", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Storage.prototype.setItem = () => {
+      throw new DOMException("Blocked", "SecurityError");
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start the work trial" }).click();
+  await page.getByLabel("Paid revenue formula").fill(revenue);
+  await page
+    .getByRole("link", { name: "Guided practice", exact: true })
+    .click();
+  await expect(
+    page.getByText(/Your browser cannot save progress/),
+  ).toBeVisible();
+  await page.getByLabel("Amount for ORD-1041").fill("321.45");
+  await page.getByLabel("Status for ORD-1041").selectOption("Cancelled");
+
+  await page.getByRole("link", { name: "Back to work simulations" }).click();
+  await expect(page.getByLabel("Paid revenue formula")).toHaveValue(revenue);
+  await expect(
+    page.getByText(/Your browser cannot save this session/),
+  ).toBeVisible();
+
+  await page
+    .getByRole("link", { name: "Guided practice", exact: true })
+    .click();
+  await expect(page.getByLabel("Amount for ORD-1041")).toHaveValue("321.45");
+  await expect(page.getByLabel("Status for ORD-1041")).toHaveValue("Cancelled");
+  await expect(
+    page.getByText(/Your browser cannot save progress/),
+  ).toBeVisible();
+});
+
 test("the complete work trial can be submitted using only the keyboard", async ({
   page,
 }) => {
