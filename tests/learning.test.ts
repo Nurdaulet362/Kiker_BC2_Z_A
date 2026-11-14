@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chooseChannel } from "../src/decision";
+import { bestChannel, initialTrial, validateScenario } from "../src/simulation/model";
 import { evaluateLesson, expectedDecision, previewLessonValue } from "../src/learning/engine";
 import { LESSONS, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, shuffleOptions, validateLessonRows, type LessonInput } from "../src/learning/model";
 
@@ -9,6 +10,38 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("agrees with the legacy decision on 1000 seeded pairs of channel revenues and spends", () => {
+    let seed = 362;
+    const amount = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return (seed % 10000001) / 100;
+    };
+    const seen = new Set<string>();
+    for (let i = 0; i < 1000; i += 1) {
+      let emailRevenue = amount(), adsRevenue = amount();
+      const emailSpend = i % 13 === 0 ? 0 : amount();
+      const adsSpend = i % 11 === 0 ? 0 : amount();
+      if (i % 17 === 0) { emailRevenue = emailSpend * 2; adsRevenue = adsSpend * 2; }
+      const scenario = initialTrial().scenario;
+      scenario.orders = [
+        { id: "E-1", channel: "Email", status: "Paid", amount: emailRevenue.toFixed(2) },
+        { id: "A-1", channel: "Ads", status: "Paid", amount: adsRevenue.toFixed(2) },
+      ];
+      scenario.channels = [
+        { name: "Email", leads: "1", spend: emailSpend.toFixed(2) },
+        { name: "Ads", leads: "1", spend: adsSpend.toFixed(2) },
+      ];
+      expect(validateScenario(scenario)).toBeNull();
+      const winner = bestChannel(scenario);
+      const normalized = winner === "Neither" ? "hold" : winner.toLowerCase();
+      expect(expectedDecision([
+        ["Email", Number(emailRevenue.toFixed(2)), emailSpend, 1],
+        ["Ads", Number(adsRevenue.toFixed(2)), adsSpend, 1],
+      ]), `pair ${i}`).toBe(normalized);
+      seen.add(normalized);
+    }
+    expect([...seen].sort()).toEqual(["ads", "email", "hold"]);
+  });
   it("uses positive unrounded channel ratios and a 1e-9 tie tolerance", () => {
     const choose = (revenue: number, spend: number, otherRevenue: number, otherSpend: number) => chooseChannel([
       { name: "Email", revenue, spend },

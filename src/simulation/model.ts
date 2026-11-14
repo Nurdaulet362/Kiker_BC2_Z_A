@@ -1,4 +1,5 @@
 import { expectedRevenue, validateRows, type Order } from "../model";
+import { chooseChannel } from "../decision";
 
 export const TRIAL_KEY = "fix-the-report.work-trial.v1";
 export const CHANNELS = ["Email", "Ads"] as const;
@@ -166,21 +167,8 @@ export function conversionGrid(scenario: Scenario): (string | number)[][] {
 }
 
 export function bestChannel(scenario: Scenario): Answers["channel"] {
-  const metrics = channelMetrics(scenario);
-  const positive = metrics.filter((c) => c.contribution > 0 && c.spend > 0);
-  if (!positive.length) return "Neither";
-  const ranked = positive.sort(
-    (a, b) => b.contribution / b.spend - a.contribution / a.spend,
-  );
-  if (
-    ranked.length > 1 &&
-    Math.abs(
-      ranked[0].contribution / ranked[0].spend -
-        ranked[1].contribution / ranked[1].spend,
-    ) < 1e-9
-  )
-    return "Neither";
-  return ranked[0].name;
+  const winner = chooseChannel(channelMetrics(scenario));
+  return winner === "hold" ? "Neither" : winner;
 }
 
 export const rate = (value: number | "N/A" | null | undefined) =>
