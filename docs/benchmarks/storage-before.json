@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "e3a7c16",
+  "samples": 200,
+  "warmup": 20,
+  "results": 100,
+  "snapshots": 100,
+  "serializedBytes": 137353,
+  "meanMs": 2.770500000072643,
+  "medianMs": 2.700000001117587,
+  "p95Ms": 3.100000001490116,
+  "maxMs": 3.400000000372529,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6 Safari/537.36"
+}

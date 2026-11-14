@@ -1,0 +1,14 @@
+{
+  "samples": 200,
+  "warmup": 20,
+  "results": 100,
+  "snapshots": 100,
+  "serializedBytes": 137371,
+  "flushMs": 3,
+  "meanMs": 0.04000000001862645,
+  "medianMs": 0,
+  "p95Ms": 0.10000000149011612,
+  "maxMs": 0.2000000011175871,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6 Safari/537.36",
+  "sourceCommit": "1c84a77"
+}

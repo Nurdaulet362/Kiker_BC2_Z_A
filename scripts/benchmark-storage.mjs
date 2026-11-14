@@ -35,13 +35,16 @@ try {
       const elapsed = performance.now() - before;
       if (iteration >= 0) durations.push(elapsed);
     }
+    const flushStart = performance.now();
     storage.flushSessionItems();
+    const flushMs = performance.now() - flushStart;
     localStorage.removeItem(key);
     durations.sort((a, b) => a - b);
     return {
       samples: durations.length, warmup: 20, results: state.results.length,
       snapshots: state.results.filter(result => result.snapshot).length,
       serializedBytes: new TextEncoder().encode(initial).length,
+      flushMs,
       meanMs: durations.reduce((a, b) => a + b, 0) / durations.length,
       medianMs: durations[Math.floor(durations.length * 0.5)],
       p95Ms: durations[Math.floor(durations.length * 0.95)], maxMs: durations.at(-1),
