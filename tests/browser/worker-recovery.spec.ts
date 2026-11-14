@@ -5,6 +5,7 @@ const lesson = LESSONS.find(item => item.id === "revenue-cancelled")!;
 
 test("a cancelled hung preview does not make the next preview or queued grading fail", async ({ page }) => {
   await page.addInitScript(() => {
+    localStorage.setItem("fix-the-report.language", "ru");
     const NativeWorker = window.Worker;
     const counts = { starts: 0, messages: 0 };
     Object.defineProperty(window, "workerRecoveryCounts", { value: counts });

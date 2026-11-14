@@ -1,8 +1,8 @@
 # Fix the Report
 
-A bilingual learning app for people who want to understand business reports and make better decisions from data. Built for the Zimran × AIESEC Business Cup MVP.
+A bilingual learning app for adults preparing for sales-ops and analyst spreadsheet assessments through realistic report-repair tasks. Built for the Zimran × AIESEC Business Cup MVP.
 
-The rebuilt default experience is a personal learning workspace with **six short cases across revenue, conversion and decisions**. Each lesson follows a complete loop: read the brief, experiment with the report, repair the calculation or recommendation, apply the principle to a new situation, review the result and continue to a recommended case. Russian is the default language; English is available throughout. This version remains local and unpublished.
+The rebuilt default experience is a personal learning workspace with **six short cases across revenue, conversion and decisions**. Each lesson follows a complete loop: read the brief, experiment with the report, repair the calculation or recommendation, apply the principle to a new situation, review the result and continue to a recommended case. English is the default on every route, regardless of browser language. The RU/EN switch preserves the choice in the existing `fix-the-report.language` key, including preferences saved before this update. This version remains local and unpublished.
 
 The repository also contains four developer skills adapted from the sources requested by the project owner. See [SKILLS.md](SKILLS.md) for provenance, installation, validation and their concrete application to the site.
 
@@ -23,7 +23,7 @@ If browser storage is unavailable, an in-memory fallback preserves both drafts w
 
 ## Demonstrate the learning product
 
-1. Open **Деньги, которых не было**, then **Открыть отчёт**.
+1. Open **The money that never arrived**, then **Open the report**. For Russian, select **RU** in the header.
 2. Change the cancelled order from $650 to `2300` (enter the number without a thousands separator). The broken SUM reports $3,680, although paid revenue is still $1,200.
 3. Identify the missing status filter and use `=SUMIF(B2:B101,"Paid",C2:C101)`. The result becomes $1,200.
 4. Check the solution against independent datasets, then answer the separate transfer question ($900).
@@ -34,7 +34,7 @@ The other cases cover weighted conversion, profit contribution versus sales volu
 
 Hints reveal an idea first, then the structure. The full solution requires confirmation, caps repair credit at 25/50 and makes the attempt practice-only. Diagnosis and transfer choices shuffle once per attempt; transfer questions have four options. Numeric cell input accepts `12,5`, `12.5` and `2 300`; ambiguous `2,300` or `2.300` asks for an ungrouped number instead of silently changing its value.
 
-The Phase 1 correction report, exact checks and local commits are in [PHASE_1_REPORT.md](PHASE_1_REPORT.md). Later phases are awaiting the review gate in [CODEX_TASKS.md](CODEX_TASKS.md).
+The Phase 1 correction report, exact checks and local commits are in [PHASE_1_REPORT.md](PHASE_1_REPORT.md). The current task sequence and review gates are in [CODEX_HACKATHON.md](CODEX_HACKATHON.md).
 
 ## Earlier work trial (`/#trial`)
 
@@ -69,7 +69,7 @@ npm run preview
 
 Browser tests use Playwright’s bundled Chromium by default. For installed Google Chrome, run `PW_CHANNEL=chrome npm run test:e2e` (the smoke script accepts the same variable). To include Firefox and WebKit, install them with `npx playwright install firefox webkit` and run `PW_ALL_BROWSERS=1 npm run test:e2e`. Unit tests cover calculation, alternative valid formulas, invalid input, hardcoded answers, linked channel metrics, changing recommendations and persistence. Browser tests cover both complete learner flows, failed submissions, repair, reload, download, fresh assignments, hints, mobile width, reset and navigation.
 
-For the H0b fixes and production-build test results, see [HACKATHON_LOG.md](docs/HACKATHON_LOG.md). For the earlier A–F review fixes before Phase 3.1, see [the review report](docs/phase-3-review.md) and [storage merge protocol](docs/storage-merge.md). Phase 2 checks remain in [PHASE_2_REPORT.md](PHASE_2_REPORT.md). Earlier checks remain in [QA_REPORT.md](QA_REPORT.md). To test a running production preview instead of the development server:
+For H0b and H1 changes and production-build test results, see [HACKATHON_LOG.md](docs/HACKATHON_LOG.md). For the earlier A–F review fixes before Phase 3.1, see [the review report](docs/phase-3-review.md) and [storage merge protocol](docs/storage-merge.md). Phase 2 checks remain in [PHASE_2_REPORT.md](PHASE_2_REPORT.md). Earlier checks remain in [QA_REPORT.md](QA_REPORT.md). To test a running production preview instead of the development server:
 
 ```sh
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run test:e2e -- --workers=1

@@ -4,6 +4,18 @@ import russian from "./locales/ru.json";
 
 export type Language = "en" | "ru";
 export const LANGUAGE_KEY = "fix-the-report.language";
+export const PAGE_COPY = {
+  en: {
+    title: "Fix the Report — Spreadsheet assessment practice",
+    headline: "Practice for your next spreadsheet assessment.",
+    description: "Train on realistic sales-ops and analyst tasks: fix a report, explain a decision, and get feedback in minutes.",
+  },
+  ru: {
+    title: "Fix the Report — практика работы с таблицами",
+    headline: "Подготовьтесь к следующему тестовому заданию по таблицам.",
+    description: "Тренируйтесь на задачах по продажам и аналитике: исправляйте отчёты, объясняйте решения и получайте разбор за несколько минут.",
+  },
+} as const;
 type Values = Record<string, string | number>;
 export type Translate = (message: string, values?: Values) => string;
 const messages: Record<string, string> = russian;

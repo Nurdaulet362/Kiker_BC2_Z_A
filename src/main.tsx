@@ -10,7 +10,7 @@ import { LearningApp } from "./learning/LearningApp";
 import {
   LANGUAGE_KEY,
   LanguageContext,
-  translate,
+  PAGE_COPY,
   type Language,
 } from "./i18n";
 import { getSessionItem, setSessionItem } from "./session-storage";
@@ -22,32 +22,26 @@ function Root() {
   const [language, setLanguage] = React.useState<Language>(() => {
     try {
       const saved = getSessionItem(LANGUAGE_KEY);
-      return saved === "ru" || saved === "en" ? saved : ["#trial", "#practice"].includes(location.hash) ? "en" : "ru";
+      return saved === "ru" || saved === "en" ? saved : "en";
     } catch {
-      return ["#trial", "#practice"].includes(location.hash) ? "en" : "ru";
+      return "en";
     }
   });
   React.useEffect(() => {
     document.documentElement.lang = language;
-    document.title = hash !== "#trial" && hash !== "#practice" ? language === "ru" ? "Fix the Report — навыки работы с данными" : "Fix the Report — Learn to make sense of data" : translate(
-      language,
-      "Fix the Report — Spreadsheet interview practice",
-    );
+    document.title = PAGE_COPY[language].title;
     document
       .querySelector('meta[name="description"]')
       ?.setAttribute(
         "content",
-        hash !== "#trial" && hash !== "#practice" ? language === "ru" ? "Учитесь понимать отчёты на практике. Короткие задания, разбор ошибок и личный учебный маршрут." : "Learn to understand reports through hands-on lessons, clear feedback and a personal learning path." : translate(
-          language,
-          "Prepare for a sales operations spreadsheet assessment. Repair a revenue report, explain a budget decision, and get feedback from 30 checks. Free browser practice.",
-        ),
+        PAGE_COPY[language].description,
       );
     try {
       setSessionItem(LANGUAGE_KEY, language);
     } catch {
       // The selected language is still available in this tab.
     }
-  }, [language, hash]);
+  }, [language]);
   React.useEffect(() => {
     const update = () => setHash(location.hash);
     addEventListener("hashchange", update);

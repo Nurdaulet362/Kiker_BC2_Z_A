@@ -1,6 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS, shuffleOptions } from "../../src/learning/model";
 
+// These scenarios explicitly exercise Russian; later choices must survive reloads.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => {
+    if (localStorage.getItem("fix-the-report.language") === null) {
+      localStorage.setItem("fix-the-report.language", "ru");
+    }
+  });
+});
+
 const cancelled = LESSONS.find((lesson) => lesson.id === "revenue-cancelled")!;
 const refunds = LESSONS.find((lesson) => lesson.id === "revenue-refunds")!;
 const diagnosis = cancelled.diagnosis.find(
@@ -314,6 +323,7 @@ test("a decision changes with the edited costs and the review preserves that evi
 test("mobile navigation is keyboard accessible and unsaved drafts survive in-tab navigation", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.addInitScript(() => {
+    localStorage.setItem("fix-the-report.language", "ru");
     Storage.prototype.setItem = () => { throw new DOMException("Blocked", "SecurityError"); };
   });
   await startCancelled(page);

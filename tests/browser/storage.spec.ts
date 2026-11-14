@@ -7,6 +7,11 @@ const cancelled = LESSONS.find(l => l.id === "revenue-cancelled")!;
 const conversion = LESSONS.find(l => l.id === "conversion-weighted")!;
 
 async function open(page: Page, lesson: Lesson) {
+  await page.addInitScript(() => {
+    if (localStorage.getItem("fix-the-report.language") === null) {
+      localStorage.setItem("fix-the-report.language", "ru");
+    }
+  });
   await page.goto(`/#lesson/${lesson.id}`);
   await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
 }
@@ -71,12 +76,13 @@ test("the last input survives an immediate reload before the debounce expires", 
 for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#trial", "fix-the-report.work-trial.v1"], ["/#practice", "fix-the-report.cancelled-orders.v1"]]) {
   test(`future-version data stays untouched on ${route}`, async ({ page }) => {
     const future = '{"version":99,"futureData":"must remain byte-for-byte"}';
-    await page.addInitScript(({ storageKey, future }) => {
+    await page.addInitScript(({ storageKey, future, language }) => {
       if (!localStorage.getItem("future-fixture-installed")) {
+        localStorage.setItem("fix-the-report.language", language);
         localStorage.setItem(storageKey, future);
         localStorage.setItem("future-fixture-installed", "yes");
       }
-    }, { storageKey, future });
+    }, { storageKey, future, language: route.includes("lesson") ? "ru" : "en" });
     await page.goto(route);
     if (route.includes("lesson")) {
       await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
