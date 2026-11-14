@@ -41,7 +41,9 @@ export function runCalculation(
     }, 4000);
     worker.onmessage = (event) => {
       cleanup();
-      resolve(event.data.result);
+      event.data.error
+        ? reject(new Error(event.data.error))
+        : resolve(event.data.result);
     };
     worker.onerror = () => {
       cleanup();
