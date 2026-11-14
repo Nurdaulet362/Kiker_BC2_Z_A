@@ -41,7 +41,7 @@ describe("adaptive learning cases", () => {
         ]) {
           const result = evaluateLesson(input);
           const breakdown = result.breakdown!;
-          expect(breakdown.diagnosis + breakdown.repair + breakdown.transfer).toBe(result.score);
+          expect(breakdown.diagnosis + breakdown.repair + breakdown.transfer, `${lesson.id}, hint level ${hintLevel}`).toBe(result.score);
           expect(breakdown.diagnosis).toBe(result.diagnosisPassed ? 20 : 0);
           expect(breakdown.transfer).toBe(result.transferPassed ? 30 : 0);
           expect(Number.isInteger(breakdown.repair)).toBe(true);
@@ -60,35 +60,52 @@ describe("adaptive learning cases", () => {
     const restored = restoreLearning(JSON.stringify({ ...initialLearning(), results: [legacy, inconsistent, result] }));
     expect(restored.results).toEqual([legacy, result]);
   });
-  it("agrees with the legacy decision on 1000 seeded pairs of channel revenues and spends", () => {
+  it("checks both decision engines against an independent exact integer-cent oracle on 1000 pairs", () => {
     let seed = 362;
-    const amount = () => {
+    const cents = (maximum: number) => {
       seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      return (seed % 10000001) / 100;
+      return seed % (maximum + 1);
+    };
+    const money = (value: number) => `${Math.floor(value / 100)}.${String(value % 100).padStart(2, "0")}`;
+    const reference = (emailRevenue: number, emailSpend: number, adsRevenue: number, adsSpend: number): "email" | "ads" | "hold" => {
+      const emailNet = BigInt(emailRevenue) - BigInt(emailSpend);
+      const adsNet = BigInt(adsRevenue) - BigInt(adsSpend);
+      if (emailSpend === 0) return adsSpend > 0 && adsNet > 0n ? "ads" : "hold";
+      if (adsSpend === 0) return emailNet > 0n ? "email" : "hold";
+      if (emailNet <= 0n && adsNet <= 0n) return "hold";
+      const left = emailNet * BigInt(adsSpend);
+      const right = adsNet * BigInt(emailSpend);
+      return left === right ? "hold" : left > right ? "email" : "ads";
     };
     const seen = new Set<string>();
     for (let i = 0; i < 1000; i += 1) {
-      let emailRevenue = amount(), adsRevenue = amount();
-      const emailSpend = i % 13 === 0 ? 0 : amount();
-      const adsSpend = i % 11 === 0 ? 0 : amount();
+      let emailRevenue = cents(10_000_000), adsRevenue = cents(10_000_000);
+      // With denominators <= 10,000 cents, distinct exact ratios differ by
+      // at least 1e-8. The oracle needs no floating-point tolerance; the
+      // production 1e-9 tie boundary is covered separately below.
+      const emailSpend = i % 13 === 0 ? 0 : cents(10_000);
+      const adsSpend = i % 11 === 0 ? 0 : cents(10_000);
       if (i % 17 === 0) { emailRevenue = emailSpend * 2; adsRevenue = adsSpend * 2; }
+      if (i % 19 === 0) { emailRevenue = Math.floor(emailSpend / 2); adsRevenue = Math.floor(adsSpend / 2); }
       const scenario = initialTrial().scenario;
       scenario.orders = [
-        { id: "E-1", channel: "Email", status: "Paid", amount: emailRevenue.toFixed(2) },
-        { id: "A-1", channel: "Ads", status: "Paid", amount: adsRevenue.toFixed(2) },
+        { id: "E-1", channel: "Email", status: "Paid", amount: money(emailRevenue) },
+        { id: "A-1", channel: "Ads", status: "Paid", amount: money(adsRevenue) },
       ];
       scenario.channels = [
-        { name: "Email", leads: "1", spend: emailSpend.toFixed(2) },
-        { name: "Ads", leads: "1", spend: adsSpend.toFixed(2) },
+        { name: "Email", leads: "1", spend: money(emailSpend) },
+        { name: "Ads", leads: "1", spend: money(adsSpend) },
       ];
       expect(validateScenario(scenario)).toBeNull();
+      const expected = reference(emailRevenue, emailSpend, adsRevenue, adsSpend);
       const winner = bestChannel(scenario);
       const normalized = winner === "Neither" ? "hold" : winner.toLowerCase();
+      expect(normalized, `legacy pair ${i}`).toBe(expected);
       expect(expectedDecision([
-        ["Email", Number(emailRevenue.toFixed(2)), emailSpend, 1],
-        ["Ads", Number(adsRevenue.toFixed(2)), adsSpend, 1],
-      ]), `pair ${i}`).toBe(normalized);
-      seen.add(normalized);
+        ["Email", emailRevenue / 100, emailSpend / 100, 1],
+        ["Ads", adsRevenue / 100, adsSpend / 100, 1],
+      ]), `learning pair ${i}`).toBe(expected);
+      seen.add(expected);
     }
     expect([...seen].sort()).toEqual(["ads", "email", "hold"]);
   });
@@ -129,6 +146,38 @@ describe("adaptive learning cases", () => {
       }
       if (lesson.decisionOptions) expect(new Set(lesson.decisionOptions.map(option => option.id)).size).toBe(lesson.decisionOptions.length);
     }
+  });
+  it.each(["en", "ru"] as const)("does not make the correct option longest in more than half the questions (%s)", language => {
+    const groups = {
+      diagnosis: LESSONS.map(lesson => ({ options: lesson.diagnosis, correct: lesson.correctDiagnosis })),
+      transfer: LESSONS.map(lesson => ({ options: lesson.transfer.options, correct: lesson.transfer.correct })),
+      decision: LESSONS.filter(lesson => lesson.decisionOptions).map(lesson => ({ options: lesson.decisionOptions!, correct: lesson.correctDecision! })),
+    };
+    for (const [kind, questions] of Object.entries({ ...groups, all: Object.values(groups).flat() })) {
+      const longest = questions.filter(question => {
+        const correct = question.options.find(option => option.id === question.correct);
+        expect(correct).toBeDefined();
+        // Equal lengths count as longest too; ties cannot hide the cue.
+        return [...correct!.label[language]].length === Math.max(...question.options.map(option => [...option.label[language]].length));
+      }).length;
+      expect(longest * 2, `${language}/${kind}: ${longest}/${questions.length}`).toBeLessThanOrEqual(questions.length);
+    }
+  });
+  it.each(["decisions-return", "decisions-hold"])("caps revealed decision repairs at 25/50 and prevents completion (%s)", lessonId => {
+    const revealed = evaluateLesson({ ...solution(lessonId), hintLevel: 3 });
+    expect(revealed.solutionRevealed).toBe(true);
+    expect(revealed.breakdown).toEqual({ diagnosis: 20, repair: 25, transfer: 30 });
+    expect(revealed.score).toBe(75);
+    expect(isLessonComplete(revealed)).toBe(false);
+    expect(isLessonComplete({ ...revealed, score: 100 })).toBe(false);
+    const restored = restoreLearning(JSON.stringify({ ...initialLearning(), results: [revealed] })).results[0];
+    expect(restored).toEqual(revealed);
+    expect(isLessonComplete(restored)).toBe(false);
+
+    const withoutReveal = evaluateLesson({ ...solution(lessonId), hintLevel: 2 });
+    expect(withoutReveal.solutionRevealed).toBe(false);
+    expect(withoutReveal.breakdown?.repair).toBe(50);
+    expect(isLessonComplete(withoutReveal)).toBe(true);
   });
   it("limits repair credit and completion only when the full solution was revealed", () => {
     for (const lesson of LESSONS) {

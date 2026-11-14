@@ -131,6 +131,18 @@ describe("sales operations work trial", () => {
     ])
       expect(restoreTrial(raw)).toEqual(initialTrial());
   });
+  it("reads legacy Neither answers from both the saved draft and submission snapshot", () => {
+    const state = initialTrial();
+    state.startedAt = new Date().toISOString();
+    state.stage = "result";
+    state.scenario.channels.forEach(channel => { channel.spend = "1000.00"; });
+    state.answers = { ...correct, channel: "Neither" };
+    state.submissions = [assess(state.scenario, state.answers, 30)];
+    const restored = restoreTrial(JSON.stringify(state));
+    expect(restored).toEqual(state);
+    expect(restored.answers.channel).toBe("Neither");
+    expect(restored.submissions[0].snapshot?.answers.channel).toBe("Neither");
+  });
   it("keeps submitted formulas and source data independent of later draft edits", () => {
     const state = initialTrial();
     const answers = { ...correct };
