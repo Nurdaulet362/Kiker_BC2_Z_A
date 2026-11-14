@@ -319,6 +319,7 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
   const tr = (en: string, ru: string) => text(language, en, ru);
   const heading = useRef<HTMLHeadingElement>(null);
   const next = getLesson(recommendation.lessonId);
+  const startNextLesson = () => onStart(recommendation.lessonId);
   const checkDisplay = (value: string) => {
     const option = lesson.decisionOptions?.find((item) => item.id === value);
     if (option) return option.label[language];
@@ -352,13 +353,16 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
     <div className="lr-work-top"><button className="lr-btn-quiet" type="button" onClick={onHome}><ArrowLeft size={17} />{tr("My learning", "Моё обучение")}</button><span className="lr-eyebrow">{lesson.title[language]}</span></div>
     <section className={`lr-review-hero${completed ? "" : " is-practice"}`}>
       <div>
-        <span className="lr-completion-label">
-          {completed ? <Check size={15} aria-hidden="true" /> : <Target size={15} aria-hidden="true" />}
-          {completed ? tr("Lesson completed", "Занятие пройдено") : tr("Practice only", "Тренировочная попытка")}
-        </span>
+        <div className="lr-review-status-row">
+          <span className="lr-completion-label">
+            {completed ? <Check size={15} aria-hidden="true" /> : <Target size={15} aria-hidden="true" />}
+            {completed ? tr("Lesson completed", "Занятие пройдено") : tr("Practice only", "Тренировочная попытка")}
+          </span>
+          <button type="button" className="lr-review-quick-next" onClick={startNextLesson}>{tr("Next lesson", "Следующее задание")}<ArrowRight size={16} aria-hidden="true" /></button>
+        </div>
         <h1 ref={heading} tabIndex={-1}>{tr("Your lesson review", "Задание разобрано")}</h1>
         <p className="lr-review-reason">{reason}</p>
-        <p>{completed ? tr("You have a solid foundation. Put it to work in the next case.", "Основа уже есть. Теперь примените её в следующем кейсе.") : tr("You found a useful place to focus. Let’s turn these mistakes into practice.", "Теперь понятно, что стоит потренировать. Разберём ошибки и закрепим навык.")}</p>
+        <p>{completed ? tr("You have a solid foundation. Put it to work in the next case.", "Основа уже есть. Теперь примените её в следующем кейсе.") : result.solutionRevealed ? tr("Use the solution as a model, then try again on your own.", "Используйте решение как образец, затем попробуйте ещё раз самостоятельно.") : tr("You found a useful place to focus. Let’s turn these mistakes into practice.", "Теперь понятно, что стоит потренировать. Разберём ошибки и закрепим навык.")}</p>
       </div>
       <div className="lr-score-ring"><div><strong className="lr-score-number">{result.score}</strong><span>{tr("out of 100", "из 100")}</span></div></div>
     </section>
@@ -384,7 +388,7 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
     <section className="lr-next-lesson" aria-label={tr("Next step", "Следующий шаг")}>
       <div><p className="lr-eyebrow">{tr("Your next step", "Ваш следующий шаг")}</p><h2>{next.title[language]}</h2><p>{recommendation.reason[language]}</p></div>
       <div className="lr-next-actions">
-        <button type="button" className="lr-btn-primary" onClick={() => onStart(recommendation.lessonId)}>{tr("Next lesson", "Следующее задание")}<ArrowRight size={18} aria-hidden="true" /></button>
+        <button type="button" className="lr-btn-primary" onClick={startNextLesson}>{tr("Next lesson", "Следующее задание")}<ArrowRight size={18} aria-hidden="true" /></button>
         <button type="button" className="lr-btn-secondary" onClick={() => onStart(lesson.id)}><RotateCcw size={16} aria-hidden="true" />{tr("Try again", "Попробовать ещё раз")}</button>
       </div>
     </section>

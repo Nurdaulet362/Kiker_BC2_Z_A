@@ -22,6 +22,9 @@ for (const language of ["en", "ru"] as const) {
     })).toBe(true);
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/#trial$/);
+    await expect(page.getByText(language === "en"
+      ? "Find the cancelled order that breaks a revenue formula. A guided, seven-minute exercise."
+      : "Найдите отменённый заказ, который искажает выручку. Семиминутное упражнение с подсказками.", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: language === "en" ? "Start the work trial" : "Начать задание", exact: true }).click();
     // Work Trial keeps its existing USD formatting in both interface languages.
     await expect(page.locator(".sim-live-result strong")).toHaveText("$3,280.00");

@@ -325,6 +325,7 @@
 .lr-review-hero.is-practice .lr-score-ring { border-color: #e1c7a8; }
 .lr-review-hero p.lr-review-reason { color: var(--learn-ink); font-weight: 600; margin: 12px 0 6px; }
 .lr-review .lr-completion-label { font-size: 11px; letter-spacing: .6px; }
+.learn-app .lr-review-quick-next { display: none; }
 .lr-review .lr-checks li > span { flex: 0 0 100px; }
 .lr-review .lr-checks li > span > span { color: inherit; margin-top: 3px; }
 .lr-review .lr-checks code { overflow-wrap: anywhere; }
@@ -435,4 +436,8 @@
   .lr-review .lr-score-ring span { font-size: 11px; }
   .lr-next-actions { width: 100%; }
   .lr-review .lr-checks li > span { flex-basis: 80px; }
+}
+@media (max-width: 600px) {
+  .lr-review-status-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; }
+  .learn-app .lr-review-quick-next { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; background: transparent; color: #805632; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
 }

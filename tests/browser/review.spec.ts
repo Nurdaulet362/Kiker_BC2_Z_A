@@ -209,3 +209,107 @@ test("the 375px review has no overflow and both next-step actions are keyboard a
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(page.getByRole("region", { name: "Следующий шаг", exact: true }).getByRole("button")).toHaveCount(2);
 });
+
+async function expectQuickNextInFirstScreen(page: Page, label: string) {
+  const quickNext = page.locator(".lr-review-hero .lr-review-quick-next");
+  await expect(quickNext).toHaveCount(1);
+  await expect(quickNext).toHaveAccessibleName(label);
+  await expect(quickNext).toBeVisible();
+  // Visibility alone can pass for controls below the fold. Measure before any
+  // click, focus or scrollIntoView so the check covers the initial review screen.
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  const box = await quickNext.boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+}
+
+const failureIntro = {
+  en: "You found a useful place to focus. Let’s turn these mistakes into practice.",
+  ru: "Теперь понятно, что стоит потренировать. Разберём ошибки и закрепим навык.",
+};
+const revealedIntro = {
+  en: "Use the solution as a model, then try again on your own.",
+  ru: "Используйте решение как образец, затем попробуйте ещё раз самостоятельно.",
+};
+
+for (const scenario of [
+  { name: "success", formula: lesson.solution, reveal: false, score: 100, target: nextLesson },
+  { name: "failure", formula: "=1200", reveal: false, score: 57, target: relatedLesson },
+  { name: "revealed", formula: lesson.solution, reveal: true, score: 75, target: relatedLesson },
+]) {
+  test(`375px ${scenario.name} review offers the same next lesson in the first screen in EN and RU`, async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await startLesson(page);
+    if (scenario.name === "success") {
+      await page.getByLabel("Amount, $, row 4", { exact: true }).fill("2300");
+    }
+    if (scenario.reveal) {
+      await page.getByRole("button", { name: "A hint, if you need one", exact: true }).click();
+      await page.getByRole("button", { name: "Next hint", exact: true }).click();
+      await page.getByRole("button", { name: "Show solution", exact: true }).click();
+      await page.getByRole("dialog").getByRole("button", { name: "Show solution", exact: true }).click();
+    }
+    await finishLesson(page, scenario.formula);
+    const reviewUrl = page.url();
+    const submitted = await savedResult(page);
+    expect(submitted.score).toBe(scenario.score);
+    expect(submitted.solutionRevealed).toBe(scenario.reveal);
+
+    for (const language of ["en", "ru"] as const) {
+      if (language === "ru") {
+        await page.getByRole("button", { name: "Русский", exact: true }).click();
+        await page.reload();
+        await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+      }
+      const buttonLabel = language === "en" ? "Next lesson" : "Следующее задание";
+      const sectionLabel = language === "en" ? "Next step" : "Следующий шаг";
+      const status = scenario.name === "success"
+        ? (language === "en" ? "Lesson completed" : "Занятие пройдено")
+        : (language === "en" ? "Practice only" : "Тренировочная попытка");
+      await expect(page.locator(".lr-completion-label")).toHaveText(status);
+      await expect(page.locator(".lr-score-number")).toHaveText(String(scenario.score));
+      const hero = page.locator(".lr-review-hero");
+      if (scenario.reveal) {
+        await expect(hero.getByText(revealedIntro[language], { exact: true })).toBeVisible();
+        await expect(hero.getByText(failureIntro[language], { exact: true })).toHaveCount(0);
+      } else if (scenario.name === "failure") {
+        await expect(hero.getByText(failureIntro[language], { exact: true })).toBeVisible();
+        await expect(hero.getByText(revealedIntro[language], { exact: true })).toHaveCount(0);
+      }
+      await expectQuickNextInFirstScreen(page, buttonLabel);
+      const nextStep = page.getByRole("region", { name: sectionLabel, exact: true });
+      await expect(nextStep.getByRole("button")).toHaveCount(2);
+      await expect(page.getByRole("button", { name: buttonLabel, exact: true })).toHaveCount(2);
+
+      if (scenario.name === "success") {
+        await page.setViewportSize({ width: 600, height: 812 });
+        await expectQuickNextInFirstScreen(page, buttonLabel);
+        await page.setViewportSize({ width: 601, height: 812 });
+        await expect(page.locator(".lr-review-quick-next")).toBeHidden();
+        await expect(page.getByRole("button", { name: buttonLabel, exact: true })).toHaveCount(1);
+        await expect(nextStep.getByRole("button")).toHaveCount(2);
+        await page.setViewportSize({ width: 375, height: 812 });
+        await expectQuickNextInFirstScreen(page, buttonLabel);
+      }
+      expect(await savedResult(page)).toEqual(submitted);
+
+      // Exercise both entry points: the shortcut must keep the recommendation
+      // used by the existing Next step action, including practice-only attempts.
+      await page.locator(".lr-review-quick-next").click();
+      await expect(page.locator(".lr-workspace h1")).toHaveText(scenario.target.title[language]);
+      const recommendedUrl = page.url();
+      await page.goto(reviewUrl);
+      await nextStep.getByRole("button", { name: buttonLabel, exact: true }).click();
+      await expect(page).toHaveURL(recommendedUrl);
+      await expect(page.locator(".lr-workspace h1")).toHaveText(scenario.target.title[language]);
+      await page.goto(reviewUrl);
+      await expect(page.locator(".lr-score-number")).toHaveText(String(scenario.score));
+      expect(await savedResult(page)).toEqual(submitted);
+    }
+  });
+}

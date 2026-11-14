@@ -480,7 +480,7 @@ export function Simulation() {
                 <h2>{t("Need a warm-up?")}</h2>
                 <p>
                   {t(
-                    "Find the cancelled order that breaks a revenue formula. A guided, five-minute exercise.",
+                    "Find the cancelled order that breaks a revenue formula. A guided, seven-minute exercise.",
                   )}{" "}
                 </p>
               </div>
