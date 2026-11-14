@@ -63,6 +63,24 @@ test("grading timeout retains its code when the learner switches to Russian", as
   await expect(page.getByRole("alert")).toContainText("Время ожидания расчёта истекло");
 });
 
+test("reviews with the same timestamp open independently by id and keep the old timestamp route", async ({ page }) => {
+  await page.addInitScript(() => {
+    const base = { lessonId: "revenue-cancelled", score: 100, diagnosisPassed: true, repairPassed: true, transferPassed: true, hintLevel: 0, solutionRevealed: false, checks: [], at: "2026-11-14T10:00:00.000Z" };
+    localStorage.setItem("fix-the-report.learning.v2", JSON.stringify({
+      version: 2, goal: "all", drafts: {}, attempts: {}, results: [
+        { ...base, id: "same-ms-a", score: 50, repairPassed: false, breakdown: { diagnosis: 20, repair: 0, transfer: 30 } },
+        { ...base, id: "same-ms-b", breakdown: { diagnosis: 20, repair: 50, transfer: 30 } },
+      ],
+    }));
+  });
+  await page.goto("/#review/same-ms-a");
+  await expect(page.locator(".lr-score-number")).toHaveText("50");
+  await page.goto("/#review/same-ms-b");
+  await expect(page.locator(".lr-score-number")).toHaveText("100");
+  await page.goto("/#review/2026-11-14T10:00:00.000Z");
+  await expect(page.locator(".lr-score-number")).toHaveText("50");
+});
+
 async function startCancelled(page: Page) {
   await page.goto("/");
   await page.getByTestId(`lesson-${cancelled.id}`).click();

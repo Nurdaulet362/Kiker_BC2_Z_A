@@ -46,6 +46,7 @@ export type LessonDraft = {
 };
 export type LessonInput = Omit<LessonDraft, "step" | "attempt"> & { lessonId: string };
 export type LessonResult = {
+  id: string;
   hintLevel: HintLevel;
   solutionRevealed: boolean;
   lessonId: string;
@@ -66,6 +67,7 @@ export type LearningState = {
   goal: SkillId | "all";
 };
 export const LEARNING_KEY = "fix-the-report.learning.v2";
+export const MAX_RESULTS = 100;
 const c = (en: string, ru: string): Copy => ({ en, ru });
 const option = (id: string, en: string, ru: string): Choice => ({ id, label: c(en, ru) });
 export const SKILLS: { id: SkillId; title: Copy; description: Copy }[] = [
@@ -294,13 +296,14 @@ export function restoreLearning(raw: string | null): LearningState {
   try {
     if (!raw) return initialLearning();
     const state = JSON.parse(raw) as LearningState;
-    if (!state || state.version !== 2 || !["all", ...SKILLS.map((skill) => skill.id)].includes(state.goal) || !Array.isArray(state.results) || state.results.length > 500 || !state.drafts || typeof state.drafts !== "object" || Array.isArray(state.drafts)) return initialLearning();
+    if (!state || state.version !== 2 || !["all", ...SKILLS.map((skill) => skill.id)].includes(state.goal) || !Array.isArray(state.results) || !state.drafts || typeof state.drafts !== "object" || Array.isArray(state.drafts)) return initialLearning();
     const drafts: Record<string, LessonDraft> = {};
     for (const lesson of LESSONS) {
       if (state.drafts[lesson.id] && validDraft(lesson, state.drafts[lesson.id])) drafts[lesson.id] = { ...state.drafts[lesson.id], hintLevel: state.drafts[lesson.id].hintLevel ?? 0 };
     }
-    const results = state.results.filter((result) => {
+    const validResults = state.results.map((result, index) => ({ result, index })).filter(({ result }) => {
       if (!result || !LESSONS.some((lesson) => lesson.id === result.lessonId) || !Number.isInteger(result.score) || result.score < 0 || result.score > 100 || ![result.diagnosisPassed, result.repairPassed, result.transferPassed].every((v) => typeof v === "boolean") || !boundedString(result.at, 40) || !Number.isFinite(Date.parse(result.at)) || !Array.isArray(result.checks) || result.checks.length > 30) return false;
+      if (result.id !== undefined && (!boundedString(result.id, 200) || !/^[A-Za-z0-9_.:-]+$/.test(result.id))) return false;
       if (!result.checks.every((check) => check && validCopy(check.label) && typeof check.passed === "boolean" && boundedString(check.expected, 200) && boundedString(check.actual, 1500))) return false;
       if (result.breakdown !== undefined) {
         const breakdown = result.breakdown;
@@ -310,17 +313,19 @@ export function restoreLearning(raw: string | null): LearningState {
       if (result.solutionRevealed !== undefined && result.solutionRevealed !== ((result.hintLevel ?? 0) === 3)) return false;
       if (result.snapshot && (result.snapshot.lessonId !== result.lessonId || !validDraft(getLesson(result.lessonId), { ...result.snapshot, step: 2 }))) return false;
       return true;
-    }).map((result) => ({
+    }).map(({ result, index }) => ({
       ...result,
+      id: result.id ?? `legacy-${result.at}-${index}`,
       hintLevel: result.hintLevel ?? 0,
       solutionRevealed: result.solutionRevealed ?? result.hintLevel === 3,
       ...(result.snapshot ? { snapshot: { ...result.snapshot, hintLevel: result.snapshot.hintLevel ?? 0 } } : {}),
     }));
+    const results = validResults.slice(-MAX_RESULTS);
     const attempts: Record<string, number> = {};
     for (const lesson of LESSONS) {
       const saved = state.attempts?.[lesson.id];
       if (Number.isSafeInteger(saved) && saved >= 0) attempts[lesson.id] = saved;
-      else if (state.attempts === undefined) attempts[lesson.id] = results.filter(result => result.lessonId === lesson.id).length;
+      else if (state.attempts === undefined) attempts[lesson.id] = validResults.filter(result => result.lessonId === lesson.id).length;
       if (drafts[lesson.id]) {
         const draft = drafts[lesson.id];
         draft.attempt ??= Math.max(attempts[lesson.id] ?? 0, results.filter(result => result.lessonId === lesson.id).length) + 1;
@@ -329,6 +334,10 @@ export function restoreLearning(raw: string | null): LearningState {
     }
     return { version: 2, goal: state.goal, drafts, attempts, results };
   } catch { return initialLearning(); }
+}
+
+export function findLessonResult(results: readonly LessonResult[], id: string): LessonResult | undefined {
+  return results.find(result => result.id === id) ?? results.find(result => result.at === id);
 }
 
 export function isLessonComplete(result: LessonResult): boolean {

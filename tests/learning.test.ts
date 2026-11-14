@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { chooseChannel } from "../src/decision";
 import { bestChannel, initialTrial, validateScenario } from "../src/simulation/model";
 import { evaluateLesson, expectedDecision, previewLessonValue } from "../src/learning/engine";
-import { LESSONS, beginLesson, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, shuffleOptions, validateLessonRows, type LessonInput } from "../src/learning/model";
+import { LESSONS, MAX_RESULTS, beginLesson, findLessonResult, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, shuffleOptions, validateLessonRows, type LessonInput } from "../src/learning/model";
+import { createResultId } from "../src/learning/result-id";
 
 function solution(id: string): LessonInput {
   const lesson = getLesson(id);
@@ -10,6 +11,61 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("gives simultaneous submissions distinct IDs even when their timestamps match", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-14T10:00:00.000Z"));
+    try {
+      const first = evaluateLesson(solution("revenue-cancelled"));
+      const second = evaluateLesson(solution("revenue-cancelled"));
+      expect(first.at).toBe(second.at);
+      expect(first.id).not.toBe(second.id);
+      expect(findLessonResult([first, second], first.id)).toBe(first);
+      expect(findLessonResult([first, second], second.id)).toBe(second);
+      expect(findLessonResult([first, second], first.at)).toBe(first);
+      expect(findLessonResult([first, second], "missing-result")).toBeUndefined();
+      const idMatchesTimestamp = { ...second, id: first.at };
+      expect(findLessonResult([first, idMatchesTimestamp], first.at)).toBe(idMatchesTimestamp);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("keeps fallback IDs unique when the clock and random source return the same values", () => {
+    vi.stubGlobal("crypto", undefined);
+    const clock = vi.spyOn(Date, "now").mockReturnValue(42);
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    try {
+      const ids = Array.from({ length: 1000 }, () => createResultId());
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(ids.every(id => id.startsWith("result-16-i-"))).toBe(true);
+    } finally {
+      clock.mockRestore();
+      random.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+  it("migrates legacy review IDs using original indices and preserves old timestamp links", () => {
+    const result = evaluateLesson(solution("revenue-cancelled"));
+    const legacy = { ...result, id: undefined };
+    const saved = { ...result, id: "saved-result" };
+    const raw = JSON.stringify({ ...initialLearning(), results: [{ broken: true }, legacy, { ...legacy, score: 75, hintLevel: 3, solutionRevealed: true, breakdown: { diagnosis: 20, repair: 25, transfer: 30 }, snapshot: { ...result.snapshot!, hintLevel: 3 } }, saved] });
+    const restored = restoreLearning(raw);
+    expect(restored.results.map(item => item.id)).toEqual([
+      `legacy-${result.at}-1`, `legacy-${result.at}-2`, "saved-result",
+    ]);
+    expect(restoreLearning(raw)).toEqual(restored);
+    expect(restoreLearning(JSON.stringify(restored))).toEqual(restored);
+    expect(findLessonResult(restored.results, result.at)).toBe(restored.results[0]);
+    expect(findLessonResult(restored.results, restored.results[1].id)).toBe(restored.results[1]);
+  });
+  it("retains the latest MAX_RESULTS valid reviews while reading even an older oversized history", () => {
+    const result = evaluateLesson(solution("revenue-cancelled"));
+    const records = Array.from({ length: MAX_RESULTS + 501 }, (_, index) => ({ ...result, id: `saved-${index}` }));
+    const state = { ...initialLearning(), attempts: undefined, results: [...records, { ...result, id: "", score: 100 }] };
+    const restored = restoreLearning(JSON.stringify(state));
+    expect(restored.results).toHaveLength(MAX_RESULTS);
+    expect(restored.results).toEqual(records.slice(-MAX_RESULTS));
+    expect(restored.attempts[result.lessonId]).toBe(records.length);
+  });
   it("keeps the length error code when grading an oversized formula", () => {
     expect(() => evaluateLesson({ ...solution("revenue-cancelled"), formula: `=${"1".repeat(1000)}` })).toThrowError(expect.objectContaining({ code: "length" }));
   });

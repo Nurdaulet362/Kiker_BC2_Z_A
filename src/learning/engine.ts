@@ -1,6 +1,7 @@
 import { FormulaWorkerError, type FormulaIssue } from "../formula-errors";
 import { calculateGrid } from "../formula";
 import { chooseChannel } from "../decision";
+import { createResultId } from "./result-id";
 import {
   formatLessonValue,
   getLesson,
@@ -110,6 +111,7 @@ export function evaluateLesson(input: LessonInput): LessonResult {
   };
   const score = breakdown.diagnosis + breakdown.repair + breakdown.transfer;
   return {
+    id: createResultId(),
     hintLevel,
     solutionRevealed,
     lessonId: lesson.id,
