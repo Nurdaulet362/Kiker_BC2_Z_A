@@ -23,6 +23,7 @@ import {
   isLessonComplete,
   normalizeRows,
   parseCellNumber,
+  shuffleOptions,
   validateLessonRows,
   type Copy,
   type Lesson,
@@ -37,6 +38,7 @@ type WorkspaceProps = {
   onComplete: (result: LessonResult) => void;
   onExit: () => void;
   language: Language;
+  attempt: number;
 };
 
 function text(language: Language, en: string, ru: string) {
@@ -86,7 +88,7 @@ function Choice({
   );
 }
 
-export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language }: WorkspaceProps) {
+export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language, attempt }: WorkspaceProps) {
   const tr = (en: string, ru: string) => text(language, en, ru);
   const heading = useRef<HTMLHeadingElement>(null);
   const [preview, setPreview] = useState<{ value?: number | string; error?: string } | null>(null);
@@ -100,6 +102,8 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
   const requestId = useRef(0);
   const rowsError = validateLessonRows(lesson, draft.rows);
   const normalizedRows = rowsError ? draft.rows : normalizeRows(lesson, draft.rows);
+  const diagnosisOptions = shuffleOptions(lesson.diagnosis, `${lesson.id}:${attempt}:diagnosis`);
+  const transferOptions = shuffleOptions(lesson.transfer.options, `${lesson.id}:${attempt}:transfer`);
 
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
@@ -272,7 +276,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
           </section>
 
           <section className="lr-answer-panel" aria-label={tr("Your solution", "Ваше решение")}>
-            <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">1</span>{tr("What was wrong with the original report?", "В чём ошибка исходного отчёта?")}</legend>{lesson.diagnosis.map((option) => <Choice key={option.id} name="diagnosis" id={option.id} selected={draft.diagnosis} onChange={(diagnosis) => updateDraft({ diagnosis })}>{option.label[language]}</Choice>)}</fieldset>
+            <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">1</span>{tr("What was wrong with the original report?", "В чём ошибка исходного отчёта?")}</legend>{diagnosisOptions.map((option) => <Choice key={option.id} name="diagnosis" id={option.id} selected={draft.diagnosis} onChange={(diagnosis) => updateDraft({ diagnosis })}>{option.label[language]}</Choice>)}</fieldset>
             {lesson.kind === "formula" ? <div className="lr-formula-field"><label htmlFor="lr-formula"><span className="lr-question-number" aria-hidden="true">2</span>{tr("Your formula", "Ваша формула")}</label><p>{tr("The current formula contains an error. Edit it below.", "В текущей формуле есть ошибка. Исправьте её ниже.")}</p><div className="lr-formula-editor"><span aria-hidden="true">ƒx</span><textarea id="lr-formula" rows={3} value={draft.formula} maxLength={1000} spellCheck={false} onChange={(e) => updateDraft({ formula: e.target.value })} aria-describedby="lr-formula-help" /></div><p id="lr-formula-help" className="lr-field-help">{tr('Use English functions and status values ("Paid"), with commas. Rows 2–101 are available.', 'Названия функций и статусы ("Paid") — на английском, разделитель — запятая. Доступны строки 2–101.')}</p><div className="lr-output" role="status" aria-live="polite"><span>{tr("Your formula returns", "По вашей формуле")}</span>{calculating ? <span className="lr-calculating"><LoaderCircle size={17} className="lr-spin" />{tr("Calculating…", "Считаем…")}</span> : preview?.error ? <span className="lr-output-error">{readableError(preview.error, language)}</span> : <strong>{preview?.value !== undefined ? formatLessonValue(preview.value, lesson.format, language) : "—"}</strong>}</div></div> : <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">2</span>{tr("What would you recommend?", "Что вы порекомендуете?")}</legend>{lesson.decisionOptions?.map((option) => <Choice key={option.id} name="decision" id={option.id} selected={draft.decision} onChange={(decision) => updateDraft({ decision })}>{option.label[language]}</Choice>)}</fieldset>}
             {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{error}</p>}
             {repairReview && <div className={`lr-inline-feedback${repairReview.repairPassed && repairReview.diagnosisPassed ? " is-success" : " is-review"}`} role="status"><span>{repairReview.repairPassed && repairReview.diagnosisPassed ? <CheckCheck size={21} /> : <CircleAlert size={21} />}</span><div><strong>{repairReview.repairPassed && repairReview.diagnosisPassed ? tr("Your solution holds up", "Решение выдержало проверку") : tr("There is still something to explore", "Есть над чем поработать")}</strong><p>{repairReview.repairPassed ? (lesson.kind === "decision" ? tr("Your recommendation follows the current data.", "Рекомендация соответствует текущим данным.") : tr("The calculation works on the test data.", "Расчёт работает на проверочных данных.")) : tr(`${repairReview.checks.filter((check) => check.passed).length} of ${repairReview.checks.length} checks passed. Try the hint and check again, or continue to the review.`, `Пройдено ${repairReview.checks.filter((check) => check.passed).length} из ${repairReview.checks.length} проверок. Можно открыть подсказку и повторить проверку или продолжить до разбора.`)}</p>{!repairReview.diagnosisPassed && <p>{tr("Reconsider the cause you selected.", "Проверьте выбранную причину ошибки.")}</p>}</div></div>}
@@ -285,7 +289,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
       {draft.step === 2 && <>
         <section className="lr-transfer-panel">
           <span className="lr-transfer-icon"><Target size={30} /></span><p className="lr-eyebrow">{tr("One more step", "Ещё один шаг")}</p>
-          <fieldset className="lr-question lr-transfer-question"><legend>{lesson.transfer.prompt[language]}</legend>{lesson.transfer.options.map((option) => <Choice key={option.id} name="transfer" id={option.id} selected={draft.transfer} onChange={(transfer) => updateDraft({ transfer })}>{option.label[language]}</Choice>)}</fieldset>
+          <fieldset className="lr-question lr-transfer-question"><legend>{lesson.transfer.prompt[language]}</legend>{transferOptions.map((option) => <Choice key={option.id} name="transfer" id={option.id} selected={draft.transfer} onChange={(transfer) => updateDraft({ transfer })}>{option.label[language]}</Choice>)}</fieldset>
           <p className="lr-transfer-note">{tr("This uses new data. Think about the rule, not the number you saw earlier.", "Здесь другие данные. Вспомните правило, а не число из предыдущего отчёта.")}</p>
           {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{error}</p>}
         </section>

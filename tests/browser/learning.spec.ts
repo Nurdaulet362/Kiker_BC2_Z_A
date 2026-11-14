@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { LESSONS } from "../../src/learning/model";
+import { LESSONS, shuffleOptions } from "../../src/learning/model";
 
 const cancelled = LESSONS.find((lesson) => lesson.id === "revenue-cancelled")!;
 const refunds = LESSONS.find((lesson) => lesson.id === "revenue-refunds")!;
@@ -75,6 +75,23 @@ test("progressive hints require confirmation and a revealed solution does not co
   await page.getByTestId(`lesson-${cancelled.id}`).click();
   await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
   await expect(page.getByRole("button", { name: "Подсказка, если понадобится", exact: true })).toBeVisible();
+});
+
+test("answer order stays fixed during an attempt and uses the next attempt seed on retry", async ({ page }) => {
+  await startCancelled(page);
+  const ids = () => page.locator('input[name="diagnosis"]').evaluateAll(inputs => inputs.map(input => (input as HTMLInputElement).value));
+  const first = shuffleOptions(cancelled.diagnosis, `${cancelled.id}:1:diagnosis`).map(option => option.id);
+  await expect.poll(ids).toEqual(first);
+  await page.getByRole("textbox", { name: "Ваша формула", exact: true }).fill(cancelled.solution);
+  await page.getByRole("button", { name: "English", exact: true }).click();
+  await expect.poll(ids).toEqual(first);
+  await page.reload();
+  await expect.poll(ids).toEqual(first);
+  await page.getByRole("button", { name: "Русский", exact: true }).click();
+  await submitCancelled(page);
+  await page.getByRole("button", { name: "Попробовать ещё раз", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
+  await expect.poll(ids).toEqual(shuffleOptions(cancelled.diagnosis, `${cancelled.id}:2:diagnosis`).map(option => option.id));
 });
 
 test("a complete Russian lesson saves its review and starts the recommended case", async ({ page }) => {

@@ -12,11 +12,11 @@ test("a saved review describes its submission, even after the draft is edited", 
   await page.getByRole("button", { name: /3 Defend your decision/ }).click();
   await page.getByRole("radio", { name: "Ads", exact: true }).check();
   await page
-    .getByRole("radio", { name: "The number of paid orders", exact: true })
+    .getByRole("radio", { name: "More paid orders show which channel can absorb more budget", exact: true })
     .check();
   await page
     .getByRole("radio", {
-      name: "The same return is guaranteed at a higher budget.",
+      name: "A positive return means the budget can be scaled without added risk.",
     })
     .check();
   await page
@@ -195,7 +195,7 @@ test("the complete work trial can be submitted using only the keyboard", async (
   for (const name of [
     "Email",
     "Contribution per dollar of ad spend",
-    "The same return is guaranteed at a higher budget.",
+    "A positive return means the budget can be scaled without added risk.",
   ]) {
     await tabTo(page.getByRole("radio", { name, exact: true }));
     await page.keyboard.press("Space");

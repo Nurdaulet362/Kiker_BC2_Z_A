@@ -161,8 +161,8 @@ export function assess(
       actual: {
         "": "Not answered",
         contribution: "Contribution per dollar of ad spend",
-        volume: "Number of paid orders",
-        conversion: "Conversion rate alone",
+        volume: "More paid orders show which channel can absorb more budget",
+        conversion: "A higher conversion rate means the next customer will cost less",
       }[answers.evidence],
       explanation:
         "Contribution here means paid revenue minus ad spend. Compare contribution / ad spend; customer count alone misses acquisition cost.",
@@ -173,9 +173,9 @@ export function assess(
       expected: "One week does not prove future returns",
       actual: {
         "": "Not answered",
-        guaranteed: "The same return is guaranteed",
+        guaranteed: "A positive return means the budget can be scaled without added risk.",
         limited: "One week does not prove future returns",
-        none: "No additional evidence is needed",
+        none: "Once the formulas are verified, this week is enough evidence for a full rollout.",
       }[answers.limitation],
       explanation:
         "Recommend a small experiment, measure its outcome, and do not promise that past efficiency continues as spend increases.",

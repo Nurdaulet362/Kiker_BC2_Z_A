@@ -95,7 +95,7 @@ export const LESSONS: Lesson[] = [
     solution: '=SUMIF(B2:B101,"Paid",C2:C101)',
     transfer: {
       prompt: c("A different store has $900 in Paid orders, $250 in Cancelled orders and $100 in Pending orders. What revenue should it report?", "У другого магазина $900 оплаченных заказов, $250 отменённых и $100 ожидающих оплаты. Какую выручку он должен указать?"),
-      options: [option("900", "$900", "$900"), option("1150", "$1,150", "$1 150"), option("1250", "$1,250", "$1 250")], correct: "900",
+      options: [option("900", "$900", "$900"), option("1150", "$1,150", "$1 150"), option("1250", "$1,250", "$1 250"), option("650", "$650", "$650")], correct: "900",
       explanation: c("Only the $900 actually paid counts. Both cancelled and pending orders are excluded.", "Учитываются только оплаченные $900. Отменённые и ожидающие оплаты заказы исключаются."),
     },
   },
@@ -116,7 +116,7 @@ export const LESSONS: Lesson[] = [
       c('Add column C, divide by column B. Guard against zero leads: =IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101)).', 'Раздели сумму C на сумму B. Учти отсутствие лидов: =IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101)).'),
     ],
     solution: '=IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101))',
-    transfer: { prompt: c("A new campaign has 20 leads and 10 sales. Another has 180 leads and 18 sales. What is the combined conversion?", "У новой кампании 20 лидов и 10 продаж. У второй — 180 лидов и 18 продаж. Какова общая конверсия?"), options: [option("30", "30%", "30%"), option("14", "14%", "14%"), option("50", "50%", "50%")], correct: "14", explanation: c("There are 28 sales from 200 leads. 28 / 200 = 14%, not the average of 50% and 10%.", "Всего 28 продаж на 200 лидов. 28 / 200 = 14%, а не среднее от 50% и 10%."), },
+    transfer: { prompt: c("A new campaign has 20 leads and 10 sales. Another has 180 leads and 18 sales. What is the combined conversion?", "У новой кампании 20 лидов и 10 продаж. У второй — 180 лидов и 18 продаж. Какова общая конверсия?"), options: [option("30", "30%", "30%"), option("14", "14%", "14%"), option("50", "50%", "50%"), option("15.56", "15.56%", "15,56%")], correct: "14", explanation: c("There are 28 sales from 200 leads. 28 / 200 = 14%, not the average of 50% and 10%.", "Всего 28 продаж на 200 лидов. 28 / 200 = 14%, а не среднее от 50% и 10%."), },
   },
   {
     id: "decisions-return", skill: "decisions", kind: "decision", level: "foundation",
@@ -134,7 +134,7 @@ export const LESSONS: Lesson[] = [
       c("In the original rows the ratios are (1400 − 400) / 400 = 2.5 and (2400 − 1800) / 1800 ≈ 0.33. Apply the brief’s rule to those values.", "В исходных строках значения равны (1400 − 400) / 400 = 2,5 и (2400 − 1800) / 1800 ≈ 0,33. Примени к ним правило из условия."),
     ],
     solution: "email", decisionOptions, correctDecision: "email",
-    transfer: { prompt: c("Next week Email brings $900 on $600 spend. Ads brings $1,200 on $400 spend. Which channel deserves a small test now?", "На следующей неделе рассылка приносит $900 при расходах $600, а реклама — $1 200 при расходах $400. Какой канал теперь стоит протестировать?"), options: [option("email", "Email, because it won before", "Рассылку, ведь раньше она была лучше"), option("ads", "Ads, with $2 contribution per dollar", "Рекламу: вклад $2 на доллар расходов"), option("all", "Both are guaranteed to scale", "Оба гарантированно можно масштабировать")], correct: "ads", explanation: c("The evidence changed. Email now returns $0.50 contribution per dollar, Ads $2. A previous winner need not stay the best choice.", "Данные изменились. Вклад рассылки теперь $0,50 на доллар, рекламы — $2. Прошлый лидер не обязательно остаётся лучшим выбором."), },
+    transfer: { prompt: c("Next week Email brings $900 on $600 spend. Ads brings $1,200 on $400 spend. Which channel deserves a small test now?", "На следующей неделе рассылка приносит $900 при расходах $600, а реклама — $1 200 при расходах $400. Какой канал теперь стоит протестировать?"), options: [option("email", "Email, because it won before", "Рассылку, ведь раньше она была лучше"), option("ads", "Ads, with $2 contribution per dollar", "Рекламу: вклад $2 на доллар расходов"), option("all", "Both are guaranteed to scale", "Оба гарантированно можно масштабировать"), option("split", "Split extra budget equally: both contributions are positive", "Разделить прибавку поровну: вклад обоих каналов положительный")], correct: "ads", explanation: c("The evidence changed. Email now returns $0.50 contribution per dollar, Ads $2. A previous winner need not stay the best choice.", "Данные изменились. Вклад рассылки теперь $0,50 на доллар, рекламы — $2. Прошлый лидер не обязательно остаётся лучшим выбором."), },
   },
   {
     id: "revenue-refunds", skill: "revenue", kind: "formula", level: "practice",
@@ -153,7 +153,7 @@ export const LESSONS: Lesson[] = [
       c('Use two SUMIF expressions: =SUMIF(B2:B101,"Paid",C2:C101)-SUMIF(B2:B101,"Paid",D2:D101).', 'Используй два SUMIF: =SUMIF(B2:B101,"Paid",C2:C101)-SUMIF(B2:B101,"Paid",D2:D101).'),
     ],
     solution: '=SUMIF(B2:B101,"Paid",C2:C101)-SUMIF(B2:B101,"Paid",D2:D101)',
-    transfer: { prompt: c("Paid orders total $1,000 with $200 refunded. A cancelled order shows $500 and a $100 refund. What is net revenue under this report's rule?", "Оплаченные заказы: $1 000, возвраты по ним: $200. Отменённый заказ: $500 с возвратом $100. Какова чистая выручка по правилу этого отчёта?"), options: [option("800", "$800", "$800"), option("700", "$700", "$700"), option("1200", "$1,200", "$1 200")], correct: "800", explanation: c("$1,000 − $200 = $800. The cancelled order and its refund are both outside this metric.", "$1 000 − $200 = $800. Отменённый заказ и возврат по нему не входят в этот показатель."), },
+    transfer: { prompt: c("Paid orders total $1,000 with $200 refunded. A cancelled order shows $500 and a $100 refund. What is net revenue under this report's rule?", "Оплаченные заказы: $1 000, возвраты по ним: $200. Отменённый заказ: $500 с возвратом $100. Какова чистая выручка по правилу этого отчёта?"), options: [option("800", "$800", "$800"), option("700", "$700", "$700"), option("1200", "$1,200", "$1 200"), option("1000", "$1,000", "$1 000")], correct: "800", explanation: c("$1,000 − $200 = $800. The cancelled order and its refund are both outside this metric.", "$1 000 − $200 = $800. Отменённый заказ и возврат по нему не входят в этот показатель."), },
   },
   {
     id: "conversion-growth", skill: "conversion", kind: "formula", level: "practice",
@@ -172,7 +172,7 @@ export const LESSONS: Lesson[] = [
       c('Extend both ranges to row 101 and add the zero-lead rule: =IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101)).', 'Расширь оба диапазона до 101-й строки и учти отсутствие лидов: =IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101)).'),
     ],
     solution: '=IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101))',
-    transfer: { prompt: c("A new week's report contains three channels, all with zero leads and zero sales. What should overall conversion show?", "В отчёте за новую неделю три канала, у каждого ноль лидов и ноль продаж. Что должна показывать общая конверсия?"), options: [option("zero", "0%: no one converted", "0%: никто не купил"), option("na", "N/A: there is no denominator", "N/A: нет знаменателя"), option("last", "Last week's conversion", "Конверсию прошлой недели")], correct: "na", explanation: c("Zero sales with some leads is 0%. Zero leads leaves conversion undefined, so the agreed report rule is N/A.", "Ноль продаж при наличии лидов — это 0%. При отсутствии лидов конверсия не определена, поэтому по условию показываем N/A."), },
+    transfer: { prompt: c("A new week's report contains three channels, all with zero leads and zero sales. What should overall conversion show?", "В отчёте за новую неделю три канала, у каждого ноль лидов и ноль продаж. Что должна показывать общая конверсия?"), options: [option("zero", "0%: no one converted", "0%: никто не купил"), option("na", "N/A: there is no denominator", "N/A: нет знаменателя"), option("last", "Last week's conversion", "Конверсию прошлой недели"), option("100", "100%: there are no unconverted leads", "100%: нет лидов, которые не купили")], correct: "na", explanation: c("Zero sales with some leads is 0%. Zero leads leaves conversion undefined, so the agreed report rule is N/A.", "Ноль продаж при наличии лидов — это 0%. При отсутствии лидов конверсия не определена, поэтому по условию показываем N/A."), },
   },
   {
     id: "decisions-hold", skill: "decisions", kind: "decision", level: "practice",
@@ -190,7 +190,7 @@ export const LESSONS: Lesson[] = [
       c("In the original rows: (800 − 1000) / 1000 = −0.2 and (1600 − 2000) / 2000 = −0.2. Apply the brief’s rule for equal or nonpositive ratios.", "В исходных строках: (800 − 1000) / 1000 = −0,2 и (1600 − 2000) / 2000 = −0,2. Примени правило из условия для равных или неположительных значений."),
     ],
     solution: "hold", decisionOptions, correctDecision: "hold",
-    transfer: { prompt: c("After costs improve, Email brings $1,500 on $500 spend. Ads brings $1,800 on $600. Both ratios are 2.0. What should you do under the agreed rule?", "После снижения расходов рассылка приносит $1 500 при расходах $500, реклама — $1 800 при расходах $600. Оба значения равны 2,0. Что делать по принятому правилу?"), options: [option("ads", "Choose Ads because revenue is larger", "Выбрать рекламу: у неё больше выручка"), option("hold", "Hold: the ratio doesn't distinguish a winner", "Сохранить бюджет: показатель не выделяет победителя"), option("email", "Choose Email because it costs less", "Выбрать рассылку: она дешевле")], correct: "hold", explanation: c("The ratios tie. The rule calls for holding the increase, because this single metric cannot select a unique winner. More evidence could support a later decision.", "Значения равны. По правилу увеличение бюджета откладывается: один показатель не позволяет выбрать победителя. Дополнительные данные помогут принять решение позже."), },
+    transfer: { prompt: c("After costs improve, Email brings $1,500 on $500 spend. Ads brings $1,800 on $600. Both ratios are 2.0. What should you do under the agreed rule?", "После снижения расходов рассылка приносит $1 500 при расходах $500, реклама — $1 800 при расходах $600. Оба значения равны 2,0. Что делать по принятому правилу?"), options: [option("ads", "Choose Ads because revenue is larger", "Выбрать рекламу: у неё больше выручка"), option("hold", "Hold: the ratio doesn't distinguish a winner", "Сохранить бюджет: показатель не выделяет победителя"), option("email", "Choose Email because it costs less", "Выбрать рассылку: она дешевле"), option("split", "Split the budget increase equally because the ratios match", "Разделить увеличение бюджета поровну, ведь показатели равны")], correct: "hold", explanation: c("The ratios tie. The rule calls for holding the increase, because this single metric cannot select a unique winner. More evidence could support a later decision.", "Значения равны. По правилу увеличение бюджета откладывается: один показатель не позволяет выбрать победителя. Дополнительные данные помогут принять решение позже."), },
   },
 ];
 
@@ -297,6 +297,25 @@ export function restoreLearning(raw: string | null): LearningState {
 
 export function isLessonComplete(result: LessonResult): boolean {
   return !result.solutionRevealed && result.repairPassed && result.transferPassed && result.score >= 80;
+}
+
+export function shuffleOptions<T>(options: readonly T[], seed: string): T[] {
+  let state = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    state = Math.imul(state ^ seed.charCodeAt(i), 16777619) >>> 0;
+  }
+  const random = () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = Math.imul(state ^ (state >>> 15), state | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+  const shuffled = [...options];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 export function recommendLesson(state: LearningState): { lessonId: string; reason: Copy } {

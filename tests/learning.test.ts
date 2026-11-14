@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateLesson, expectedDecision, previewLessonValue } from "../src/learning/engine";
-import { LESSONS, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, validateLessonRows, type LessonInput } from "../src/learning/model";
+import { LESSONS, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, shuffleOptions, validateLessonRows, type LessonInput } from "../src/learning/model";
 
 function solution(id: string): LessonInput {
   const lesson = getLesson(id);
@@ -8,6 +8,29 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("shuffles repeatably and distributes correct answers across every position", () => {
+    for (const lesson of LESSONS) {
+      expect(lesson.transfer.options).toHaveLength(4);
+      for (const [kind, options, correct] of [
+        ["diagnosis", lesson.diagnosis, lesson.correctDiagnosis],
+        ["transfer", lesson.transfer.options, lesson.transfer.correct],
+      ] as const) {
+        const original = options.map(option => option.id);
+        expect(new Set(original).size).toBe(options.length);
+        const counts = Array<number>(options.length).fill(0);
+        for (let attempt = 1; attempt <= 200; attempt += 1) {
+          const seed = `${lesson.id}:${attempt}:${kind}`;
+          const shuffled = shuffleOptions(options, seed);
+          expect(shuffled).toEqual(shuffleOptions(options, seed));
+          expect(shuffled.map(option => option.id).sort()).toEqual([...original].sort());
+          counts[shuffled.findIndex(option => option.id === correct)] += 1;
+        }
+        expect(options.map(option => option.id)).toEqual(original);
+        for (const count of counts) expect(count, `${lesson.id}/${kind}: ${counts}`).toBeGreaterThanOrEqual(30);
+      }
+      if (lesson.decisionOptions) expect(new Set(lesson.decisionOptions.map(option => option.id)).size).toBe(lesson.decisionOptions.length);
+    }
+  });
   it("limits repair credit and completion only when the full solution was revealed", () => {
     for (const lesson of LESSONS) {
       for (const hintLevel of [0, 1, 2, 3] as const) {

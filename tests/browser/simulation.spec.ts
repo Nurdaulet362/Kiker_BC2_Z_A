@@ -15,11 +15,11 @@ test("work trial: diagnose, repair, explain, persist, download and solve a new a
   await page.getByRole("button", { name: "Continue to your decision" }).click();
   await page.getByRole("radio", { name: "Ads", exact: true }).check();
   await page
-    .getByRole("radio", { name: "The number of paid orders", exact: true })
+    .getByRole("radio", { name: "More paid orders show which channel can absorb more budget", exact: true })
     .check();
   await page
     .getByRole("radio", {
-      name: "The same return is guaranteed at a higher budget.",
+      name: "A positive return means the budget can be scaled without added risk.",
     })
     .check();
   await page.getByRole("button", { name: "Submit my work" }).click();

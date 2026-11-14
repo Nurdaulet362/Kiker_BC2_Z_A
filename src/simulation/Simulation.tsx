@@ -1010,8 +1010,8 @@ export function Simulation() {
                             "contribution",
                             "Contribution per dollar of ad spend",
                           ],
-                          ["volume", "The number of paid orders"],
-                          ["conversion", "Conversion rate alone"],
+                          ["volume", "More paid orders show which channel can absorb more budget"],
+                          ["conversion", "A higher conversion rate means the next customer will cost less"],
                         ].map(([value, label]) => (
                           <label key={value}>
                             <input
@@ -1034,7 +1034,7 @@ export function Simulation() {
                         {[
                           [
                             "guaranteed",
-                            "The same return is guaranteed at a higher budget.",
+                            "A positive return means the budget can be scaled without added risk.",
                           ],
                           [
                             "limited",
@@ -1042,7 +1042,7 @@ export function Simulation() {
                           ],
                           [
                             "none",
-                            "The totals are correct, so no more evidence is needed.",
+                            "Once the formulas are verified, this week is enough evidence for a full rollout.",
                           ],
                         ].map(([value, label]) => (
                           <label key={value}>

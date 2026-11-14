@@ -375,5 +375,9 @@
   "Could not check this report. Please try again.": "Не удалось проверить отчёт. Попробуйте снова.",
   "The calculation could not complete. Please try again.": "Не удалось завершить расчёт. Попробуйте снова.",
   "Use English function names, commas between arguments, and Paid, Cancelled or Pending for status values.": "Пишите названия функций по-английски и разделяйте аргументы запятыми. Для статусов в формулах используйте Paid, Cancelled и Pending.",
-  "Use English function names and commas between arguments. A zero-lead result is the text N/A.": "Пишите названия функций по-английски и разделяйте аргументы запятыми. Если лидов нет, верните текст N/A."
+  "Use English function names and commas between arguments. A zero-lead result is the text N/A.": "Пишите названия функций по-английски и разделяйте аргументы запятыми. Если лидов нет, верните текст N/A.",
+  "More paid orders show which channel can absorb more budget": "Больше оплаченных заказов показывает, какой канал освоит больший бюджет",
+  "A higher conversion rate means the next customer will cost less": "При более высокой конверсии следующий клиент обойдётся дешевле",
+  "A positive return means the budget can be scaled without added risk.": "Если результат положительный, бюджет можно масштабировать без дополнительного риска.",
+  "Once the formulas are verified, this week is enough evidence for a full rollout.": "После проверки формул данных этой недели достаточно для полного масштабирования."
 }
