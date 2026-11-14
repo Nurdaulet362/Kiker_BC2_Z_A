@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { trialIsLocked } from "./access-mode";
 
 for (const language of ["en", "ru"] as const) {
   test(`the ${language} homepage links to Work Trial with keyboard access at 375px`, async ({ page }) => {
@@ -21,6 +22,7 @@ for (const language of ["en", "ru"] as const) {
       return style.outlineStyle !== "none" && parseFloat(style.outlineWidth) >= 2;
     })).toBe(true);
     await page.keyboard.press("Enter");
+    if (await trialIsLocked(page, language)) return;
     await expect(page).toHaveURL(/#trial$/);
     await expect(page.getByText(language === "en"
       ? "Find the cancelled order that breaks a revenue formula. A guided, seven-minute exercise."

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS } from "../../src/learning/model";
+import { demoAccess, expectPricing } from "./access-mode";
 
 const languageKey = "fix-the-report.language";
 const titles = {
@@ -36,6 +37,7 @@ for (const route of routes) {
     await page.goto(route);
     expect(await page.evaluate(() => navigator.language)).toBe("ru-RU");
     await expectLanguage(page, "en");
+    if (route === "/#trial" && !demoAccess) await expectPricing(page);
     if (route === "/#practice") {
       await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
       await expect(page.getByRole("heading", { name: "The money that never arrived", exact: true })).toBeVisible();
@@ -87,6 +89,7 @@ for (const saved of ["ru", "en", "invalid"]) {
     for (const route of routes) {
       await page.goto(route);
       await expectLanguage(page, expected);
+      if (route === "/#trial" && !demoAccess) await expectPricing(page, expected);
       if (route === "/#practice") await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
     }
     await expect.poll(() => page.evaluate(key => localStorage.getItem(key), languageKey)).toBe(expected);

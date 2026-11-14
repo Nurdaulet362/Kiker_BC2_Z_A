@@ -6,6 +6,8 @@ import "@fontsource/dm-sans/600.css";
 import "@fontsource/dm-sans/700.css";
 import { Simulation } from "./simulation/Simulation";
 import { LearningApp } from "./learning/LearningApp";
+import { DEMO_ACCESS, resolveAccessRoute } from "./access";
+import { DemoAccessBanner } from "./pricing/Pricing";
 import {
   LANGUAGE_KEY,
   LanguageContext,
@@ -43,9 +45,10 @@ function Root() {
   }, [language]);
   React.useEffect(() => {
     const update = () => {
-      if (location.hash === "#practice") {
-        // Replace the obsolete entry and notify both hash-based routers.
-        location.replace("#lesson/revenue-cancelled");
+      const destination = resolveAccessRoute(location.hash);
+      if (destination !== location.hash) {
+        // Replace inaccessible/obsolete entries and notify both hash routers.
+        location.replace(destination);
         return;
       }
       setHash(location.hash);
@@ -56,7 +59,10 @@ function Root() {
   }, []);
   return (
     <LanguageContext.Provider value={{ language, setLanguage }}>
-      {hash === "#practice" ? null : hash === "#trial" ? <Simulation /> : <LearningApp />}
+      <div className={DEMO_ACCESS ? "demo-access-app" : undefined}>
+        {DEMO_ACCESS && <DemoAccessBanner />}
+        {resolveAccessRoute(hash) !== hash ? null : hash === "#trial" ? <Simulation /> : <LearningApp />}
+      </div>
     </LanguageContext.Provider>
   );
 }

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { trialIsLocked } from "./access-mode";
 const revenue = '=SUMIF(B2:B101,"Paid",C2:C101)';
 const conversion = '=IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101))';
 
@@ -8,6 +9,10 @@ test("work trial: diagnose, repair, explain, persist, download and solve a new a
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/#trial");
+  if (await trialIsLocked(page)) {
+    expect(errors).toEqual([]);
+    return;
+  }
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await expect(page.locator(".sim-live-result strong")).toHaveText("$3,280.00");
   await page.getByRole("button", { name: "Continue to conversion" }).click();
@@ -60,6 +65,7 @@ test("work trial: diagnose, repair, explain, persist, download and solve a new a
     page.getByRole("heading", { name: "You can defend this report." }),
   ).toBeVisible();
   await expect(page.locator(".sim-score strong")).toHaveText("100");
+  await expect(page.getByTestId("demo-access-banner")).toBeVisible();
   await expect(page.getByText(`First submission: ${first}/100`)).toBeVisible();
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download my review" }).click();
@@ -96,6 +102,10 @@ test("mobile: errors, source changes, hints, restore, and first lesson navigatio
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/#trial");
+  if (await trialIsLocked(page)) {
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    return;
+  }
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByLabel("Amount for E-P101").fill("wrong");
   await expect(page.getByText(/Row 2 needs an amount/).first()).toBeVisible();

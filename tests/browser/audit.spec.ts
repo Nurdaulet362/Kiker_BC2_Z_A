@@ -1,5 +1,6 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { demoAccess, expectPricing, trialIsLocked } from "./access-mode";
 
 const revenue = '=SUMIF(B2:B101,"Paid",C2:C101)';
 const conversion = '=IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101))';
@@ -8,6 +9,7 @@ test("a saved review describes its submission, even after the draft is edited", 
   page,
 }) => {
   await page.goto("/#trial");
+  if (await trialIsLocked(page)) return;
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByRole("button", { name: /3 Defend your decision/ }).click();
   await page.getByRole("radio", { name: "Ads", exact: true }).check();
@@ -55,6 +57,7 @@ test("keyboard help dialog keeps the background inert and restores focus", async
   page,
 }) => {
   await page.goto("/#trial");
+  if (await trialIsLocked(page)) return;
   const trigger = page.getByRole("button", { name: "About this work trial" });
   await trigger.focus();
   await page.keyboard.press("Enter");
@@ -83,6 +86,7 @@ test("zero paid orders and zero leads can be completed with N/A conversion", asy
   page,
 }) => {
   await page.goto("/#trial");
+  if (await trialIsLocked(page)) return;
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByLabel("Paid revenue formula").fill(revenue);
   for (const status of await page.getByRole("combobox").all()) {
@@ -119,6 +123,10 @@ test("unavailable browser storage warns clearly and leaves the trial usable", as
     };
   });
   await page.goto("/#trial");
+  if (await trialIsLocked(page)) {
+    await expect(page.getByText(/Browser storage is unavailable/)).toBeVisible();
+    return;
+  }
   await expect(
     page.getByText(/Your browser cannot save this session/),
   ).toBeVisible();
@@ -139,9 +147,14 @@ test("lesson and work-trial drafts survive route changes when browser storage is
     };
   });
   await page.goto("/#trial");
-  await page.getByRole("button", { name: "Start the work trial" }).click();
-  await page.getByLabel("Paid revenue formula").fill(revenue);
-  await page.getByRole("link", { name: "Guided practice", exact: true }).click();
+  if (demoAccess) {
+    await page.getByRole("button", { name: "Start the work trial" }).click();
+    await page.getByLabel("Paid revenue formula").fill(revenue);
+    await page.getByRole("link", { name: "Guided practice", exact: true }).click();
+  } else {
+    await expectPricing(page);
+    await page.getByRole("link", { name: "Start free lesson", exact: true }).click();
+  }
   await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
   await expect(page.getByText(/Browser storage is unavailable/)).toBeVisible();
   await page.getByRole("button", { name: "Open the report", exact: true }).click();
@@ -151,10 +164,14 @@ test("lesson and work-trial drafts survive route changes when browser storage is
 
   await page.getByRole("main").getByRole("button", { name: "My learning", exact: true }).click();
   await page.getByRole("link", { name: "Work Trial", exact: true }).click();
-  await expect(page.getByLabel("Paid revenue formula")).toHaveValue(revenue);
-  await expect(page.getByText(/Your browser cannot save this session/)).toBeVisible();
-
-  await page.getByRole("link", { name: "Guided practice", exact: true }).click();
+  if (demoAccess) {
+    await expect(page.getByLabel("Paid revenue formula")).toHaveValue(revenue);
+    await expect(page.getByText(/Your browser cannot save this session/)).toBeVisible();
+    await page.getByRole("link", { name: "Guided practice", exact: true }).click();
+  } else {
+    await expectPricing(page);
+    await page.getByRole("link", { name: "Start free lesson", exact: true }).click();
+  }
   await expect(page.getByLabel("Amount, $, row 2", { exact: true })).toHaveValue("321.45");
   await expect(page.getByRole("textbox", { name: "Your formula", exact: true })).toHaveValue(revenue);
   await expect(page.getByRole("radio", { name: "Order status is ignored", exact: true })).toBeChecked();
@@ -172,6 +189,7 @@ test("the complete work trial can be submitted using only the keyboard", async (
     await expect(target).toBeFocused();
   };
   await page.goto("/#trial");
+  if (await trialIsLocked(page)) return;
   await tabTo(page.getByRole("button", { name: "Start the work trial" }));
   await page.keyboard.press("Enter");
   await tabTo(page.getByLabel("Paid revenue formula"));

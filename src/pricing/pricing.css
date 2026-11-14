@@ -1,0 +1,35 @@
+.pricing-screen { max-width: 850px; margin: 0 auto; padding: 8px 0 22px; }
+.pricing-heading { margin-bottom: 28px; }
+.pricing-eyebrow { color: #805632; font-size: 10px; font-weight: 600; letter-spacing: 1.1px; margin: 0 0 12px; }
+.pricing-heading h1 { margin: 0 0 12px; }
+.pricing-heading > p:last-child { color: #5c6a76; font-size: 14px; margin: 0; }
+.pricing-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.pricing-card { display: flex; flex-direction: column; padding: 28px; border: 1px solid #dce7da; border-radius: 12px; background: #edf3ed; min-width: 0; }
+.pricing-card-pro { background: #fff0e7; border-color: #efded0; }
+.pricing-card h2 { margin: 0; font-size: 22px; }
+.pricing-card-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pricing-card-heading > span { color: #805632; font-size: 11px; border: 1px solid #dfc6b2; border-radius: 20px; padding: 4px 9px; }
+.pricing-price { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; margin: 22px 0; }
+.pricing-price strong { color: #263342; font-size: 38px; font-weight: 600; letter-spacing: -1px; line-height: 1.15; }
+.pricing-price > span { color: #5c6a76; font-size: 13px; }
+.pricing-features { display: grid; gap: 13px; list-style: none; padding: 0; margin: 0 0 26px; }
+.pricing-features li { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.pricing-features svg { color: #536a58; margin-top: 2px; }
+.pricing-interest { margin-top: auto; }
+.pricing-payment-note { color: #735748; font-size: 12px; line-height: 1.7; margin: 0 0 15px; }
+.pricing-interest > p:last-child { margin-bottom: 0; }
+.pricing-action { display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 11px 15px; border-radius: 7px; font-size: 12px; font-weight: 500; text-decoration: none; line-height: 1.5; }
+.pricing-action-free { margin-top: auto; background: white; border: 1px solid #cbd7c8; color: #394958; }
+.pricing-action-free:hover { background: #f7faf6; }
+.pricing-action-pro { width: 100%; background: #bc4933; color: white; border: 1px solid #bc4933; }
+.pricing-action-pro:hover { background: #9e3b28; }
+.pricing-action:focus-visible { outline: 3px solid #236974; outline-offset: 4px; }
+.pro-demo-banner { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px; background: #fff0d9; color: #654622; border-bottom: 1px solid #e7d3ae; font-size: 13px; font-weight: 600; line-height: 1.6; text-align: center; overflow-wrap: anywhere; }
+.demo-access-app .learn-sidebar { top: 44px; height: calc(100vh - 44px); }
+.demo-access-app .sim-task-list { top: 66px; }
+@media (max-width: 600px) {
+  .pricing-plans { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .pricing-card { padding: 23px; }
+  .pricing-heading > p:last-child { font-size: 13px; }
+  .pricing-price { margin-block: 18px; }
+}

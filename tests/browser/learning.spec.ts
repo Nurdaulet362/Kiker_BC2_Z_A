@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS, shuffleOptions } from "../../src/learning/model";
+import { expectLessonDestination } from "./access-mode";
 
 // These scenarios explicitly exercise Russian; later choices must survive reloads.
 test.beforeEach(async ({ context }) => {
@@ -258,7 +259,7 @@ test("a hard-coded answer fails varied data and routes to a different case in th
   const score = Number((await page.locator(".lr-score-number").innerText()).match(/\d+/)?.[0]);
   expect(score).toBeLessThan(100);
   await page.getByRole("button", { name: "Следующее задание", exact: true }).click();
-  await expect(page.locator(".lr-workspace h1")).toHaveText(refunds.title.ru);
+  await expectLessonDestination(page, refunds, "ru");
 });
 
 test("language changes preserve the edited formula and diagnosis across reload", async ({ page }) => {

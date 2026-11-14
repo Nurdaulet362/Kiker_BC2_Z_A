@@ -1,6 +1,7 @@
 import { FUTURE_VERSION_WARNING } from "../../src/storage-messages";
 import { expect, test, type Page } from "@playwright/test";
 import { LESSONS, type Lesson } from "../../src/learning/model";
+import { demoAccess, expectPricing } from "./access-mode";
 
 const key = "fix-the-report.learning.v2";
 const cancelled = LESSONS.find(l => l.id === "revenue-cancelled")!;
@@ -84,6 +85,18 @@ for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#tria
       }
     }, { storageKey, future, language: route.includes("lesson") ? "ru" : "en" });
     await page.goto(route);
+    if (route.includes("trial") && !demoAccess) {
+      await expectPricing(page);
+      await page.getByRole("button", { name: "Русский", exact: true }).click();
+      await expectPricing(page, "ru");
+      // Locked Work Trial must not read, normalize or overwrite its future data.
+      await expect(page.getByRole("status").filter({ hasText: FUTURE_VERSION_WARNING.ru })).toHaveCount(0);
+      expect(await page.evaluate(k => localStorage.getItem(k), storageKey)).toBe(future);
+      await page.reload();
+      await expectPricing(page, "ru");
+      expect(await page.evaluate(k => localStorage.getItem(k), storageKey)).toBe(future);
+      return;
+    }
     if (route.includes("lesson")) {
       await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
       await page.getByRole("textbox", { name: "Ваша формула", exact: true }).fill("=42");

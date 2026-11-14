@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { LESSONS, type LessonResult } from "../../src/learning/model";
+import { expectLessonDestination } from "./access-mode";
 
 const lesson = LESSONS.find(item => item.id === "revenue-cancelled")!;
 const nextLesson = LESSONS.find(item => item.id === "conversion-weighted")!;
@@ -118,7 +119,7 @@ test("a hardcoded answer opens failed checks, stays practice-only and recommends
   await expect(page.locator(".learn-progress-ring strong")).toHaveText("0/6");
   await page.goto(reviewUrl);
   await page.getByRole("region", { name: "Next step", exact: true }).getByRole("button", { name: "Next lesson", exact: true }).click();
-  await expect(page.locator(".lr-workspace h1")).toHaveText(relatedLesson.title.en);
+  await expectLessonDestination(page, relatedLesson, "en");
 });
 
 test("a revealed solution explains the practice-only status and preserves the 75-point cap", async ({ page }) => {
@@ -301,12 +302,12 @@ for (const scenario of [
       // Exercise both entry points: the shortcut must keep the recommendation
       // used by the existing Next step action, including practice-only attempts.
       await page.locator(".lr-review-quick-next").click();
-      await expect(page.locator(".lr-workspace h1")).toHaveText(scenario.target.title[language]);
+      await expectLessonDestination(page, scenario.target, language);
       const recommendedUrl = page.url();
       await page.goto(reviewUrl);
       await nextStep.getByRole("button", { name: buttonLabel, exact: true }).click();
       await expect(page).toHaveURL(recommendedUrl);
-      await expect(page.locator(".lr-workspace h1")).toHaveText(scenario.target.title[language]);
+      await expectLessonDestination(page, scenario.target, language);
       await page.goto(reviewUrl);
       await expect(page.locator(".lr-score-number")).toHaveText(String(scenario.score));
       expect(await savedResult(page)).toEqual(submitted);

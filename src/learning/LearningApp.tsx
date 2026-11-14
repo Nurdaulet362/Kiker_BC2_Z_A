@@ -7,6 +7,8 @@ import { LESSONS, SKILLS, LEARNING_KEY, findLessonResult, setLearningGoal, begin
 import { needsLearningBackup } from "./storage-backup";
 import { mergeLearning, mergeLearningJSON, prepareLessonInput, recordLessonResult } from "./persistence";
 import { LessonReview, Workspace } from "./Workspace";
+import { canAccessLesson } from "../access";
+import { Pricing } from "../pricing/Pricing";
 import "./learning.css";
 
 configureSessionItem(LEARNING_KEY, { version: 2, merge: mergeLearningJSON, needsBackup: needsLearningBackup });
@@ -93,6 +95,11 @@ export function LearningApp() {
   }, [hash]);
   const navigate = (route: string) => { location.hash = route; setMenu(false); };
   const start = (id: string) => {
+    const lesson = LESSONS.find(item => item.id === id);
+    if (lesson && !canAccessLesson(lesson.level)) {
+      navigate("pricing");
+      return;
+    }
     setState(previous => beginLesson(previous, id));
     navigate(`lesson/${id}`);
   };
@@ -105,8 +112,13 @@ export function LearningApp() {
   const reviewId = hash.startsWith("#review/") ? hash.slice(8) : "";
   const result = findLessonResult(state.results, reviewId);
   const reviewedLesson = result && LESSONS.find(lesson => lesson.id === result.lessonId);
+  const lockedContent = !!((activeLesson && !canAccessLesson(activeLesson.level)) || (reviewedLesson && !canAccessLesson(reviewedLesson.level)));
+  const isPricing = hash === "#pricing" || lockedContent;
   const isProgress = hash === "#progress";
-  const isDashboard = !activeLesson && !result && !isProgress;
+  const isDashboard = !activeLesson && !result && !isProgress && !isPricing;
+  useEffect(() => {
+    if (lockedContent) location.replace("#pricing");
+  }, [hash, lockedContent]);
   const activeSkill = activeLesson?.skill;
   const selectedLessons = LESSONS.filter(lesson => state.goal === "all" || lesson.skill === state.goal);
   const latestFor = (id: string) => state.results.filter(result => result.lessonId === id).at(-1);
@@ -123,8 +135,9 @@ export function LearningApp() {
       <button className="learn-brand" onClick={() => navigate("learn")} aria-label={c("Fix the Report home", "Fix the Report — главная")}><span className="learn-brand-icon"><BarChart3 size={23} strokeWidth={2.4} /></span><span>Fix the Report<span className="learn-brand-dot">.</span></span></button>
       <div className="learn-sidebar-label">{c("YOUR WORKSPACE", "ВАШЕ ПРОСТРАНСТВО")}</div>
       <nav className="learn-navigation" aria-label={c("Main navigation", "Основная навигация")}>
-        <button className={!isProgress ? "is-active" : ""} onClick={() => navigate("learn")} aria-current={isDashboard ? "page" : undefined}><BookOpen size={19} />{c("My learning", "Обучение")}<ChevronRight size={15} /></button>
+        <button className={!isProgress && !isPricing ? "is-active" : ""} onClick={() => navigate("learn")} aria-current={isDashboard ? "page" : undefined}><BookOpen size={19} />{c("My learning", "Обучение")}<ChevronRight size={15} /></button>
         <button className={isProgress ? "is-active" : ""} onClick={() => navigate("progress")} aria-current={isProgress ? "page" : undefined}><TrendingUp size={19} />{c("My progress", "Мой прогресс")}</button>
+        <button className={isPricing ? "is-active" : ""} onClick={() => navigate("pricing")} aria-current={isPricing ? "page" : undefined}><Layers3 size={19} />{c("Plans", "Тарифы")}</button>
       </nav>
       <div className="learn-sidebar-label learn-path-label">{c("LEARNING PATH", "УЧЕБНЫЙ МАРШРУТ")}</div>
       <nav className="learn-skill-nav" aria-label={c("Skills", "Навыки")}>
@@ -134,10 +147,10 @@ export function LearningApp() {
     </aside>
     {menu && <button className="learn-menu-backdrop" aria-label={c("Close menu", "Закрыть меню")} onClick={() => setMenu(false)} />}
     <div className="learn-body" inert={mobile && menu}>
-      <header className="learn-topbar"><div className="learn-topbar-left"><button className="learn-mobile-menu" aria-label={c("Toggle navigation", "Открыть меню")} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={20} /> : <Menu size={20} />}</button><span>{c("Workspace", "Личный кабинет")}</span><ChevronRight size={13} /><b>{isProgress ? c("Progress", "Прогресс") : activeLesson ? c("Practice", "Практика") : result ? c("Lesson review", "Разбор занятия") : c("Learning", "Обучение")}</b></div><div className="learn-topbar-right"><LanguageSwitcher /><div className="learn-profile"><span>{c("L", "У")}</span><div>{c("Your workspace", "Ваш кабинет")}<small>{c("Learning without an account", "Можно учиться без регистрации")}</small></div></div></div></header>
+      <header className="learn-topbar"><div className="learn-topbar-left"><button className="learn-mobile-menu" aria-label={c("Toggle navigation", "Открыть меню")} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={20} /> : <Menu size={20} />}</button><span>{c("Workspace", "Личный кабинет")}</span><ChevronRight size={13} /><b>{isPricing ? c("Plans", "Тарифы") : isProgress ? c("Progress", "Прогресс") : activeLesson ? c("Practice", "Практика") : result ? c("Lesson review", "Разбор занятия") : c("Learning", "Обучение")}</b></div><div className="learn-topbar-right"><LanguageSwitcher /><div className="learn-profile"><span>{c("L", "У")}</span><div>{c("Your workspace", "Ваш кабинет")}<small>{c("Learning without an account", "Можно учиться без регистрации")}</small></div></div></div></header>
       <main className="learn-main" id="learning-main" ref={main} tabIndex={-1}>
         {saveStatus !== "ok" && <p className="learn-save-warning" role="status">{saveStatus === "future-version" ? FUTURE_VERSION_WARNING[language] : c("Browser storage is unavailable. Your progress stays in this tab until you close or reload it.", "Хранилище браузера недоступно. Прогресс сохранится только в этой вкладке до закрытия или перезагрузки.")}</p>}
-        {activeLesson ? <Workspace key={activeLesson.id} lesson={activeLesson} draft={state.drafts[activeLesson.id] ?? initialDraft(activeLesson.id, nextLessonAttempt(state, activeLesson.id))} onDraft={(draft: LessonDraft) => setState(previous => saveLessonDraft(previous, activeLesson.id, draft))} onPrepare={input => prepareLessonInput(mergeLearning(state, restoreLearning(readSessionItem(LEARNING_KEY))), input)} onComplete={submission => { const saved = restoreLearning(readSessionItem(LEARNING_KEY)); setState(previous => recordLessonResult(mergeLearning(previous, saved), submission)); navigate(`review/${submission.id}`); }} onExit={() => navigate("learn")} language={language} /> : result && reviewedLesson ? <LessonReview lesson={reviewedLesson} result={result} recommendation={recommended} onStart={start} onHome={() => navigate("learn")} language={language} /> : isProgress ? <>
+        {isPricing ? <Pricing /> : activeLesson ? <Workspace key={activeLesson.id} lesson={activeLesson} draft={state.drafts[activeLesson.id] ?? initialDraft(activeLesson.id, nextLessonAttempt(state, activeLesson.id))} onDraft={(draft: LessonDraft) => setState(previous => saveLessonDraft(previous, activeLesson.id, draft))} onPrepare={input => prepareLessonInput(mergeLearning(state, restoreLearning(readSessionItem(LEARNING_KEY))), input)} onComplete={submission => { const saved = restoreLearning(readSessionItem(LEARNING_KEY)); setState(previous => recordLessonResult(mergeLearning(previous, saved), submission)); navigate(`review/${submission.id}`); }} onExit={() => navigate("learn")} language={language} /> : result && reviewedLesson ? <LessonReview lesson={reviewedLesson} result={result} recommendation={recommended} onStart={start} onHome={() => navigate("learn")} language={language} /> : isProgress ? <>
           <div className="learn-page-heading"><div><p className="learn-eyebrow">{c("EVERY ATTEMPT COUNTS", "КАЖДАЯ ПОПЫТКА — ЭТО ОПЫТ")}</p><h1 tabIndex={-1}>{c("See how far you’ve come", "Ваш прогресс в деталях")}</h1><p>{c("Find your strengths and choose what to practice next.", "Посмотрите, что уже получается и чему уделить внимание.")}</p></div></div>
           <div className="learn-progress-summary"><div><span>{c("Completed lessons", "Пройдено занятий")}</span><strong>{completed.size}<small> / {LESSONS.length}</small></strong></div><div><span>{c("Total attempts", "Всего попыток")}</span><strong>{state.results.length}</strong></div><div><span>{c("Skills practiced", "Навыков в работе")}</span><strong>{SKILLS.filter(skill => skillScore(skill.id) !== undefined).length}<small> / 3</small></strong></div></div>
           <div className="learn-section-title"><h2>{c("Your skill map", "Ваша карта навыков")}</h2><span>{c("Latest attempt for each skill", "Последняя попытка по каждому навыку")}</span></div>
@@ -147,7 +160,7 @@ export function LearningApp() {
         </> : <>
           <div className="learn-page-heading"><div><p className="learn-eyebrow">{c("PRACTICAL SKILLS. REAL UNDERSTANDING.", "ПРАКТИЧЕСКИЕ НАВЫКИ. НАСТОЯЩЕЕ ПОНИМАНИЕ.")}</p><h1 tabIndex={-1}>{state.results.length ? c("Ready for your next insight?", "Готовы к следующему открытию?") : PAGE_COPY[language].headline}</h1><p>{PAGE_COPY[language].description}</p></div><span className="learn-heading-badge"><Compass size={16} />{c("Your learning space", "Ваше пространство для роста")}</span></div>
           <div className="learn-dashboard-grid"><div className="learn-dashboard-content">
-            <section className="learn-feature"><div className="learn-feature-copy"><span className="learn-feature-kicker"><span />{state.results.length ? c("YOUR NEXT STEP", "ВАШ СЛЕДУЮЩИЙ ШАГ") : c("START WITH A SMALL WIN", "НАЧНИТЕ С МАЛЕНЬКОЙ ПОБЕДЫ")}</span><h2>{tx(nextLesson.title)}</h2><p>{tx(nextLesson.summary)}</p><div className="learn-feature-meta"><span><Clock3 size={15} />{nextLesson.minutes} {c("min", "мин")}</span><span><Layers3 size={15} />{c("Learn by doing", "Обучение на практике")}</span></div><button className="lr-btn-primary" onClick={() => start(nextLesson.id)}>{state.drafts[nextLesson.id] ? c("Continue learning", "Продолжить занятие") : c("Start learning", "Начать занятие")}<ArrowRight size={18} /></button></div><ReportIllustration language={language} /></section>
+            <section className="learn-feature"><div className="learn-feature-copy"><span className="learn-feature-kicker"><span />{state.results.length ? c("YOUR NEXT STEP", "ВАШ СЛЕДУЮЩИЙ ШАГ") : c("START WITH A SMALL WIN", "НАЧНИТЕ С МАЛЕНЬКОЙ ПОБЕДЫ")}</span><h2>{tx(nextLesson.title)}</h2><p>{tx(nextLesson.summary)}</p><div className="learn-feature-meta"><span><Clock3 size={15} />{nextLesson.minutes} {c("min", "мин")}</span><span><Layers3 size={15} />{c("Learn by doing", "Обучение на практике")}</span></div><button className="lr-btn-primary" onClick={() => start(nextLesson.id)}>{!canAccessLesson(nextLesson.level) ? c("View Pro plan", "Посмотреть тариф Pro") : state.drafts[nextLesson.id] ? c("Continue learning", "Продолжить занятие") : c("Start learning", "Начать занятие")}<ArrowRight size={18} /></button></div><ReportIllustration language={language} /></section>
             {state.results.length > 0 && <p className="learn-recommendation-reason"><Lightbulb size={16} />{tx(recommended.reason)}</p>}
             <section className="learn-work-trial" aria-label={c("Work Trial", "Рабочее задание (Work Trial)")}>
               <div><strong>{c("Ready to connect the skills?", "Готовы объединить навыки?")}</strong><p>{c("Work through revenue, conversion and a budget decision in one assignment.", "Проверьте выручку, конверсию и решение о бюджете в одном задании.")}</p></div>
@@ -170,7 +183,7 @@ export function LearningApp() {
 function LessonCard({ lesson, language, index, score, passed, draft, onStart }: { lesson: Lesson; language: "en" | "ru"; index: number; score?: number; passed: boolean; draft: boolean; onStart: () => void }) {
   const c = (en: string, ru: string) => language === "ru" ? ru : en;
   return <article className={`learn-course learn-course-${lesson.skill}`}>
-    <div className="learn-course-top"><span className="learn-course-number">{String(index + 1).padStart(2, "0")}</span><SkillArt skill={lesson.skill} /><span className="learn-course-level">{passed ? <><Check size={12} />{c("Completed", "Пройдено")}</> : score !== undefined ? c("Keep practicing", "Закрепите навык") : lesson.level === "foundation" ? c("Foundation", "Основы") : c("Practice", "Закрепление")}</span></div>
-    <div className="learn-course-content"><h3>{lesson.title[language]}</h3><p>{lesson.summary[language]}</p><div className="learn-course-meta"><span><Clock3 size={14} />{lesson.minutes} {c("min", "мин")}</span><span>{score !== undefined ? `${score}/100` : lesson.kind === "formula" ? c("Spreadsheet practice", "Работа с таблицей") : c("Decision practice", "Принятие решений")}</span></div><button onClick={onStart} data-testid={`lesson-${lesson.id}`} aria-label={`${c("Start", "Начать")}: ${lesson.title[language]}`}>{score !== undefined ? c("Practice again", "Повторить") : draft ? c("Continue lesson", "Продолжить") : c("Start lesson", "Начать занятие")}<ArrowUpRight size={17} /></button></div>
+    <div className="learn-course-top"><span className="learn-course-number">{String(index + 1).padStart(2, "0")}</span><SkillArt skill={lesson.skill} /><span className="learn-course-level">{lesson.level === "practice" && "Pro · "}{passed ? <><Check size={12} />{c("Completed", "Пройдено")}</> : score !== undefined ? c("Keep practicing", "Закрепите навык") : lesson.level === "foundation" ? c("Foundation", "Основы") : c("Practice", "Закрепление")}</span></div>
+    <div className="learn-course-content"><h3>{lesson.title[language]}</h3><p>{lesson.summary[language]}</p><div className="learn-course-meta"><span><Clock3 size={14} />{lesson.minutes} {c("min", "мин")}</span><span>{score !== undefined ? `${score}/100` : lesson.kind === "formula" ? c("Spreadsheet practice", "Работа с таблицей") : c("Decision practice", "Принятие решений")}</span></div><button onClick={onStart} data-testid={`lesson-${lesson.id}`} aria-label={`${!canAccessLesson(lesson.level) ? c("View Pro plan", "Посмотреть тариф Pro") : c("Start", "Начать")}: ${lesson.title[language]}`}>{!canAccessLesson(lesson.level) ? c("View Pro plan", "Посмотреть тариф Pro") : score !== undefined ? c("Practice again", "Повторить") : draft ? c("Continue lesson", "Продолжить") : c("Start lesson", "Начать занятие")}<ArrowUpRight size={17} /></button></div>
   </article>;
 }
