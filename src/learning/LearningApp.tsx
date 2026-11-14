@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, BookOpen, Check, CheckCheck, ChevronRight, Clock3, Compass, FileCheck2, Flag, Layers3, Lightbulb, Menu, Target, TrendingUp, X } from "lucide-react";
 import { LanguageContext, LanguageSwitcher } from "../i18n";
 import { getSessionItem, setSessionItem } from "../session-storage";
-import { LESSONS, SKILLS, LEARNING_KEY, initialDraft, initialLearning, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
+import { LESSONS, SKILLS, LEARNING_KEY, initialDraft, initialLearning, isLessonComplete, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
 import { LessonReview, Workspace } from "./Workspace";
 import "./learning.css";
 
@@ -82,7 +82,7 @@ export function LearningApp() {
     navigate(`lesson/${id}`);
   };
   const latestResults = new Map(state.results.map(result => [result.lessonId, result]));
-  const completed = new Set([...latestResults.values()].filter(result => result.repairPassed && result.transferPassed && result.score >= 80).map(result => result.lessonId));
+  const completed = new Set([...latestResults.values()].filter(isLessonComplete).map(result => result.lessonId));
   const recommended = recommendLesson(state);
   const nextLesson = LESSONS.find(lesson => lesson.id === recommended.lessonId) ?? LESSONS[0];
   const lessonId = hash.startsWith("#lesson/") ? hash.slice(8) : "";

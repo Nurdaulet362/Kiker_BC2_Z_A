@@ -16,9 +16,11 @@ import {
 } from "lucide-react";
 import { feedback, translate, type Language } from "../i18n";
 import { gradeLesson, previewLesson } from "./client";
+import { Modal } from "../App";
 import {
   formatLessonValue,
   getLesson,
+  isLessonComplete,
   normalizeRows,
   parseCellNumber,
   validateLessonRows,
@@ -92,6 +94,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [repairReview, setRepairReview] = useState<LessonResult | null>(null);
+  const [confirmSolution, setConfirmSolution] = useState(false);
   const [cellEdits, setCellEdits] = useState<Record<string, string>>({});
   const activeRequest = useRef<AbortController | null>(null);
   const requestId = useRef(0);
@@ -188,6 +191,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
         diagnosis: draft.diagnosis,
         decision: draft.decision,
         transfer: draft.transfer,
+        hintLevel: draft.hintLevel,
       }, controller.signal);
       if (id !== requestId.current || controller.signal.aborted) return;
       if (complete) onComplete(result);
@@ -256,7 +260,15 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
             <div className="lr-data-foot"><span>{lesson.skill === "conversion" ? tr("Fictional data · leads and sales", "Учебные данные · лиды и продажи") : tr("Fictional data · amounts in USD", "Учебные данные · суммы в USD")}</span><button type="button" className="lr-btn-quiet" onClick={() => { setCellEdits({}); updateDraft({ rows: lesson.rows.map((row) => [...row]) }); }}><RotateCcw size={14} />{tr("Reset data", "Вернуть данные")}</button></div>
             {rowsError && <p className="lr-alert" role="alert"><CircleAlert size={17} />{readableError(rowsError, language)}</p>}
             <div className="lr-task-note"><Target size={18} /><p>{lesson.objective[language]}</p></div>
-            <details className="lr-hint"><summary><Lightbulb size={18} />{tr("A hint, if you need one", "Подсказка, если понадобится")}<ChevronDown size={16} /></summary><p>{lesson.hint[language]}</p></details>
+            <section className="lr-hint" aria-label={tr("Lesson hints", "Подсказки к занятию")}>
+              {draft.hintLevel === 0 ? <button className="lr-hint-toggle" type="button" onClick={() => updateDraft({ hintLevel: 1 })}><Lightbulb size={18} />{tr("A hint, if you need one", "Подсказка, если понадобится")}</button> : <>
+                <h3>{tr("Hints", "Подсказки")}</h3>
+                {lesson.hints.slice(0, draft.hintLevel).map((hint, index) => <p key={index}><strong>{tr(`Level ${index + 1}`, `Уровень ${index + 1}`)}</strong>{hint[language]}</p>)}
+                {draft.hintLevel === 1 && <button className="lr-btn-secondary" type="button" onClick={() => updateDraft({ hintLevel: 2 })}>{tr("Next hint", "Следующая подсказка")}</button>}
+                {draft.hintLevel === 2 && <button className="lr-btn-secondary" type="button" onClick={() => setConfirmSolution(true)}>{tr("Show solution", "Показать решение")}</button>}
+                {draft.hintLevel === 3 && <p role="status">{tr("Solution viewed. This attempt is practice only; repair points are capped at 25.", "Решение просмотрено. Эта попытка тренировочная: за исправление можно получить не более 25 баллов.")}</p>}
+              </>}
+            </section>
           </section>
 
           <section className="lr-answer-panel" aria-label={tr("Your solution", "Ваше решение")}>
@@ -279,6 +291,10 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
         </section>
         <div className="lr-work-footer"><button className="lr-btn-quiet" type="button" onClick={() => updateDraft({ step: 1 })}><ArrowLeft size={16} />{tr("Back to the report", "Вернуться к отчёту")}</button><button className="lr-btn-primary" type="button" onClick={() => void assess(true)} disabled={busy}>{busy ? <LoaderCircle size={18} className="lr-spin" /> : <Check size={18} />}{busy ? tr("Preparing your review…", "Готовим разбор…") : tr("Finish lesson", "Завершить задание")}</button></div>
       </>}
+      {confirmSolution && <Modal title={tr("Show the full solution?", "Показать полное решение?")} close={() => setConfirmSolution(false)}>
+        <p>{tr("After viewing the solution, repair points are capped at 25 out of 50 and this lesson will not count as completed. You can practise a similar case afterwards.", "После показа решения за исправление можно получить не более 25 из 50 баллов, а занятие не будет засчитано как пройденное. После этого можно потренироваться на похожем кейсе.")}</p>
+        <div className="lr-solution-actions"><button className="lr-btn-secondary" type="button" onClick={() => setConfirmSolution(false)}>{tr("Keep trying myself", "Продолжить самостоятельно")}</button><button className="lr-btn-primary" type="button" onClick={() => { setConfirmSolution(false); updateDraft({ hintLevel: 3 }); }}>{tr("Show solution", "Показать решение")}</button></div>
+      </Modal>}
     </article>
   );
 }
@@ -312,7 +328,8 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
   ];
   return <article className="lr-review">
     <div className="lr-work-top"><button className="lr-btn-quiet" type="button" onClick={onHome}><ArrowLeft size={17} />{tr("My learning", "Моё обучение")}</button><span className="lr-eyebrow">{lesson.title[language]}</span></div>
-    <section className="lr-review-hero"><div><span className="lr-completion-label"><Check size={15} />{tr("Lesson reviewed", "Задание разобрано")}</span><h1 ref={heading} tabIndex={-1}>{tr("Your lesson review", "Задание разобрано")}</h1><p>{result.repairPassed && result.transferPassed && result.score >= 80 ? tr("You have a solid foundation. Put it to work in the next case.", "Основа уже есть. Теперь примените её в следующем кейсе.") : tr("You found a useful place to focus. Let’s turn these mistakes into practice.", "Теперь понятно, что стоит потренировать. Разберём ошибки и закрепим навык.")}</p></div><div className="lr-score-ring" style={{ "--score": `${result.score}%` } as React.CSSProperties}><div><strong className="lr-score-number">{result.score}</strong><span>{tr("out of 100", "из 100")}</span></div></div></section>
+    <section className="lr-review-hero"><div><span className="lr-completion-label"><Check size={15} />{tr("Lesson reviewed", "Задание разобрано")}</span><h1 ref={heading} tabIndex={-1}>{tr("Your lesson review", "Задание разобрано")}</h1><p>{isLessonComplete(result) ? tr("You have a solid foundation. Put it to work in the next case.", "Основа уже есть. Теперь примените её в следующем кейсе.") : tr("You found a useful place to focus. Let’s turn these mistakes into practice.", "Теперь понятно, что стоит потренировать. Разберём ошибки и закрепим навык.")}</p></div><div className="lr-score-ring" style={{ "--score": `${result.score}%` } as React.CSSProperties}><div><strong className="lr-score-number">{result.score}</strong><span>{tr("out of 100", "из 100")}</span></div></div></section>
+    {result.solutionRevealed && <p className="lr-inline-feedback is-review" role="status">{tr("You viewed the solution — try a similar case. This lesson is not counted as completed; repair points are capped at 25 out of 50.", "Вы смотрели решение — попробуйте похожий кейс. Занятие не засчитано как пройденное; за исправление можно получить не более 25 из 50 баллов.")}</p>}
     <div className="lr-review-grid">{components.map((component, index) => <section className={`lr-review-item${component.passed ? " is-success" : " is-review"}`} key={index}><div className="lr-review-item-top">{component.passed ? <CheckCheck size={20} /> : <Target size={20} />}<span>{component.points}<small> / {component.max}</small></span></div><h2>{component.label}</h2><p>{component.detail}</p></section>)}</div>
     <section className="lr-review-explanation"><div className="lr-panel-heading"><Lightbulb size={22} /><h2>{tr("The rule, with the original example", "Правило на исходном примере")}</h2></div><p>{lesson.explanation[language]}</p>{lesson.kind === "formula" && <div className="lr-solution"><span>{tr("One possible formula", "Один из вариантов формулы")}</span><code>{lesson.solution}</code></div>}{result.snapshot?.formula && lesson.kind === "formula" && <div className="lr-submitted-formula"><span>{tr("Your submitted formula", "Ваша формула при отправке")}</span><code>{result.snapshot.formula}</code></div>}<div className="lr-transfer-explanation"><strong>{tr("In the new situation", "В новой ситуации")}</strong><p>{lesson.transfer.explanation[language]}</p></div></section>
     <details className="lr-checks"><summary><CheckCheck size={18} />{tr("See the checks", "Посмотреть проверки")}<span>{result.checks.filter((check) => check.passed).length}/{result.checks.length}</span><ChevronDown size={17} /></summary><ul>{result.checks.map((check, index) => <li key={index}><span className={check.passed ? "lr-check-pass" : "lr-check-fail"}>{check.passed ? <Check size={17} /> : <CircleAlert size={17} />}</span><div><strong>{check.label[language]}</strong><p>{tr("Expected", "Ожидалось")}: <code>{checkDisplay(check.expected)}</code> <span aria-hidden="true">·</span> {tr("Your result", "Ваш результат")}: <code>{checkDisplay(check.actual)}</code></p></div></li>)}</ul></details>

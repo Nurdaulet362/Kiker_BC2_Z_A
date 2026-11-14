@@ -75,6 +75,9 @@ export function evaluateLesson(input: LessonInput): LessonResult {
   const invalid = validateLessonRows(lesson, input.rows);
   if (invalid) throw new Error(invalid);
   if (typeof input.formula !== "string" || input.formula.length > 1000) throw new Error("Keep your formula under 1,000 characters.");
+  const hintLevel = input.hintLevel ?? 0;
+  if (![0, 1, 2, 3].includes(hintLevel)) throw new Error("Invalid hint level.");
+  const solutionRevealed = hintLevel === 3;
   const checks = lesson.kind === "formula"
     ? lessonScenarios(lesson, input.rows).map((scenario) => {
         const actual = previewLessonValue(lesson.id, scenario.rows, input.formula);
@@ -90,8 +93,14 @@ export function evaluateLesson(input: LessonInput): LessonResult {
   const diagnosisPassed = input.diagnosis === lesson.correctDiagnosis;
   const repairPassed = checks.every((check) => check.passed);
   const transferPassed = input.transfer === lesson.transfer.correct;
-  const score = Math.round((diagnosisPassed ? 20 : 0) + 50 * checks.filter((check) => check.passed).length / checks.length + (transferPassed ? 30 : 0));
+  const repairPoints = Math.min(
+    Math.round(50 * checks.filter((check) => check.passed).length / checks.length),
+    solutionRevealed ? 25 : 50,
+  );
+  const score = (diagnosisPassed ? 20 : 0) + repairPoints + (transferPassed ? 30 : 0);
   return {
+    hintLevel,
+    solutionRevealed,
     lessonId: lesson.id,
     score,
     diagnosisPassed,
@@ -99,6 +108,6 @@ export function evaluateLesson(input: LessonInput): LessonResult {
     transferPassed,
     checks,
     at: new Date().toISOString(),
-    snapshot: { ...input, rows: clone(input.rows) },
+    snapshot: { ...input, hintLevel, rows: clone(input.rows) },
   };
 }

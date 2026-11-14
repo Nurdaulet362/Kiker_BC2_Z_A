@@ -46,6 +46,37 @@ test("an ambiguous thousands separator shows an error instead of changing the re
   await expect(page.locator(".lr-output strong")).toHaveText(/3\s?680/);
 });
 
+test("progressive hints require confirmation and a revealed solution does not complete the lesson", async ({ page }) => {
+  await startCancelled(page);
+  const hints = page.getByRole("region", { name: "Подсказки к занятию" });
+  await page.getByRole("button", { name: "Подсказка, если понадобится", exact: true }).click();
+  await expect(hints.getByText("Уровень 1", { exact: true })).toBeVisible();
+  await expect(hints).not.toContainText(cancelled.solution);
+  await page.getByRole("button", { name: "Следующая подсказка", exact: true }).click();
+  await expect(hints.getByText("Уровень 2", { exact: true })).toBeVisible();
+  await expect(hints).not.toContainText(cancelled.solution);
+  await page.getByRole("button", { name: "Показать решение", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Продолжить самостоятельно" }).click();
+  await expect(hints).not.toContainText(cancelled.solution);
+  await page.getByRole("button", { name: "Показать решение", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Показать решение", exact: true }).click();
+  await expect(hints).toContainText(cancelled.solution);
+  await page.reload();
+  await expect(hints.getByText("Уровень 3", { exact: true })).toBeVisible();
+  await submitCancelled(page);
+  await expect(page.locator(".lr-score-number")).toHaveText("75");
+  await expect(page.getByRole("status")).toContainText("Вы смотрели решение — попробуйте похожий кейс");
+  await page.reload();
+  await expect(page.locator(".lr-score-number")).toHaveText("75");
+  await page.getByRole("button", { name: "Моё обучение", exact: true }).click();
+  const card = page.locator(".learn-course").filter({ has: page.getByTestId(`lesson-${cancelled.id}`) });
+  await expect(card.locator(".learn-course-level")).toHaveText("Закрепите навык");
+  await expect(page.locator(".learn-progress-ring strong")).toHaveText("0/6");
+  await page.getByTestId(`lesson-${cancelled.id}`).click();
+  await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Подсказка, если понадобится", exact: true })).toBeVisible();
+});
+
 test("a complete Russian lesson saves its review and starts the recommended case", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));

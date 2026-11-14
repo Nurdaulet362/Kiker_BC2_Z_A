@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateLesson, expectedDecision, previewLessonValue } from "../src/learning/engine";
-import { LESSONS, getLesson, initialDraft, initialLearning, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, validateLessonRows, type LessonInput } from "../src/learning/model";
+import { LESSONS, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, validateLessonRows, type LessonInput } from "../src/learning/model";
 
 function solution(id: string): LessonInput {
   const lesson = getLesson(id);
@@ -8,6 +8,44 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("limits repair credit and completion only when the full solution was revealed", () => {
+    for (const lesson of LESSONS) {
+      for (const hintLevel of [0, 1, 2, 3] as const) {
+        const result = evaluateLesson({ ...solution(lesson.id), hintLevel });
+        expect(result.score).toBe(hintLevel === 3 ? 75 : 100);
+        expect(result.hintLevel).toBe(hintLevel);
+        expect(result.solutionRevealed).toBe(hintLevel === 3);
+        expect(result.snapshot?.hintLevel).toBe(hintLevel);
+        expect(isLessonComplete(result)).toBe(hintLevel !== 3);
+      }
+      expect(lesson.hints).toHaveLength(3);
+      if (lesson.kind === "formula") {
+        for (const hint of lesson.hints.slice(0, 2)) {
+          expect(hint.en).not.toContain(lesson.solution);
+          expect(hint.ru).not.toContain(lesson.solution);
+        }
+      }
+    }
+    const state = initialLearning();
+    state.results = [evaluateLesson({ ...solution("revenue-cancelled"), hintLevel: 3 })];
+    expect(recommendLesson(state).lessonId).toBe("revenue-refunds");
+    expect(isLessonComplete({ ...state.results[0], score: 100 })).toBe(false);
+  });
+  it("restores old hint-free drafts, results and snapshots as level zero", () => {
+    const state = initialLearning();
+    state.drafts["revenue-cancelled"] = initialDraft("revenue-cancelled");
+    state.results = [evaluateLesson(solution("revenue-cancelled"))];
+    const legacy = JSON.parse(JSON.stringify(state));
+    delete legacy.drafts["revenue-cancelled"].hintLevel;
+    delete legacy.results[0].hintLevel;
+    delete legacy.results[0].solutionRevealed;
+    delete legacy.results[0].snapshot.hintLevel;
+    expect(restoreLearning(JSON.stringify(legacy))).toEqual(state);
+    state.drafts["revenue-cancelled"].hintLevel = 3;
+    state.results = [evaluateLesson({ ...solution("revenue-cancelled"), hintLevel: 3 })];
+    expect(restoreLearning(JSON.stringify(state))).toEqual(state);
+    expect(initialDraft("revenue-cancelled").hintLevel).toBe(0);
+  });
   it("parses decimal and space-grouped numbers without guessing ambiguous separators", () => {
     for (const [raw, value] of [
       ["12,5", 12.5], ["12.5", 12.5], ["12.50", 12.5],
