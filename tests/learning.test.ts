@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { chooseChannel } from "../src/decision";
 import { bestChannel, initialTrial, validateScenario } from "../src/simulation/model";
 import { evaluateLesson, expectedDecision, previewLessonValue } from "../src/learning/engine";
-import { LESSONS, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, shuffleOptions, validateLessonRows, type LessonInput } from "../src/learning/model";
+import { LESSONS, beginLesson, getLesson, initialDraft, initialLearning, isLessonComplete, normalizeRows, parseCellNumber, recommendLesson, restoreLearning, shuffleOptions, validateLessonRows, type LessonInput } from "../src/learning/model";
 
 function solution(id: string): LessonInput {
   const lesson = getLesson(id);
@@ -10,6 +10,25 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("preserves a draft seed and a monotonic attempt counter after history eviction", () => {
+    const id = "revenue-cancelled";
+    const state = initialLearning();
+    state.attempts[id] = 120;
+    const current = beginLesson(state, id);
+    expect(current.drafts[id].attempt).toBe(121);
+    expect(current.attempts[id]).toBe(121);
+    const resumed = restoreLearning(JSON.stringify({ ...current, results: [] }));
+    expect(beginLesson(resumed, id).drafts[id].attempt).toBe(121);
+    delete resumed.drafts[id];
+    expect(beginLesson(resumed, id).drafts[id].attempt).toBe(122);
+
+    const legacy = JSON.parse(JSON.stringify({ ...initialLearning(), results: [evaluateLesson(solution(id))], drafts: { [id]: initialDraft(id) } }));
+    delete legacy.attempts;
+    delete legacy.drafts[id].attempt;
+    const restored = restoreLearning(JSON.stringify(legacy));
+    expect(restored.drafts[id].attempt).toBe(2);
+    expect(restored.attempts[id]).toBe(2);
+  });
   it("persists score components that add up for correct, partial, incorrect and assisted attempts", () => {
     for (const lesson of LESSONS) {
       for (const hintLevel of [0, 2, 3] as const) {
@@ -137,6 +156,7 @@ describe("adaptive learning cases", () => {
   it("restores old hint-free drafts, results and snapshots as level zero", () => {
     const state = initialLearning();
     state.drafts["revenue-cancelled"] = initialDraft("revenue-cancelled");
+    state.attempts["revenue-cancelled"] = 1;
     state.results = [evaluateLesson(solution("revenue-cancelled"))];
     const legacy = JSON.parse(JSON.stringify(state));
     delete legacy.drafts["revenue-cancelled"].hintLevel;
@@ -252,6 +272,7 @@ describe("adaptive learning cases", () => {
     const input = solution("revenue-cancelled");
     state.results.push(evaluateLesson(input));
     state.drafts[input.lessonId] = initialDraft(input.lessonId);
+    state.attempts[input.lessonId] = 1;
     input.rows[0][2] = 999;
     expect(state.results[0].snapshot?.rows[0][2]).toBe(480);
     expect(restoreLearning(JSON.stringify(state))).toEqual(state);

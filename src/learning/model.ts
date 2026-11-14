@@ -34,6 +34,7 @@ export type Lesson = {
 };
 export type HintLevel = 0 | 1 | 2 | 3;
 export type LessonDraft = {
+  attempt: number;
   hintLevel: HintLevel;
   rows: Row[];
   formula: string;
@@ -42,7 +43,7 @@ export type LessonDraft = {
   transfer: string;
   step: 0 | 1 | 2;
 };
-export type LessonInput = Omit<LessonDraft, "step"> & { lessonId: string };
+export type LessonInput = Omit<LessonDraft, "step" | "attempt"> & { lessonId: string };
 export type LessonResult = {
   hintLevel: HintLevel;
   solutionRevealed: boolean;
@@ -60,6 +61,7 @@ export type LearningState = {
   version: 2;
   results: LessonResult[];
   drafts: Record<string, LessonDraft>;
+  attempts: Record<string, number>;
   goal: SkillId | "all";
 };
 export const LEARNING_KEY = "fix-the-report.learning.v2";
@@ -201,13 +203,30 @@ export function getLesson(id: string): Lesson {
   return lesson;
 }
 
-export function initialDraft(lessonId: string): LessonDraft {
+export function initialDraft(lessonId: string, attempt = 1): LessonDraft {
   const lesson = getLesson(lessonId);
-  return { rows: lesson.rows.map((row) => [...row]), formula: lesson.initialFormula, diagnosis: "", decision: "", transfer: "", step: 0, hintLevel: 0 };
+  return { rows: lesson.rows.map((row) => [...row]), formula: lesson.initialFormula, diagnosis: "", decision: "", transfer: "", step: 0, hintLevel: 0, attempt };
 }
 
 export function initialLearning(): LearningState {
-  return { version: 2, results: [], drafts: {}, goal: "all" };
+  return { version: 2, results: [], drafts: {}, attempts: {}, goal: "all" };
+}
+
+export function nextLessonAttempt(state: LearningState, lessonId: string): number {
+  return Math.max(state.attempts[lessonId] ?? 0, state.results.filter(result => result.lessonId === lessonId).length) + 1;
+}
+
+export function saveLessonDraft(state: LearningState, lessonId: string, draft: LessonDraft): LearningState {
+  return {
+    ...state,
+    drafts: { ...state.drafts, [lessonId]: draft },
+    attempts: { ...state.attempts, [lessonId]: Math.max(state.attempts[lessonId] ?? 0, draft.attempt) },
+  };
+}
+
+export function beginLesson(state: LearningState, lessonId: string): LearningState {
+  if (state.drafts[lessonId]) return state;
+  return saveLessonDraft(state, lessonId, initialDraft(lessonId, nextLessonAttempt(state, lessonId)));
 }
 
 export function normalizeRows(lesson: Lesson, rows: Row[]): Row[] {
@@ -267,7 +286,7 @@ function validDraft(lesson: Lesson, value: unknown): value is LessonDraft {
   const draft = value as LessonDraft;
   // Preserve incomplete or inconsistent numeric edits, but never arbitrary structures.
   if (!Array.isArray(draft.rows) || draft.rows.length > 100 || !draft.rows.every((row) => Array.isArray(row) && row.length === lesson.columns.length && row.every((cell) => (typeof cell === "number" && Number.isFinite(cell) && Math.abs(cell) <= 1_000_000) || boundedString(cell, 80)))) return false;
-  return validHintLevel(draft.hintLevel) && [0, 1, 2].includes(draft.step) && boundedString(draft.formula) && boundedString(draft.diagnosis, 80) && boundedString(draft.decision, 80) && boundedString(draft.transfer, 80);
+  return (draft.attempt === undefined || (Number.isSafeInteger(draft.attempt) && draft.attempt > 0)) && validHintLevel(draft.hintLevel) && [0, 1, 2].includes(draft.step) && boundedString(draft.formula) && boundedString(draft.diagnosis, 80) && boundedString(draft.decision, 80) && boundedString(draft.transfer, 80);
 }
 
 export function restoreLearning(raw: string | null): LearningState {
@@ -296,7 +315,18 @@ export function restoreLearning(raw: string | null): LearningState {
       solutionRevealed: result.solutionRevealed ?? result.hintLevel === 3,
       ...(result.snapshot ? { snapshot: { ...result.snapshot, hintLevel: result.snapshot.hintLevel ?? 0 } } : {}),
     }));
-    return { version: 2, goal: state.goal, drafts, results };
+    const attempts: Record<string, number> = {};
+    for (const lesson of LESSONS) {
+      const saved = state.attempts?.[lesson.id];
+      if (Number.isSafeInteger(saved) && saved >= 0) attempts[lesson.id] = saved;
+      else if (state.attempts === undefined) attempts[lesson.id] = results.filter(result => result.lessonId === lesson.id).length;
+      if (drafts[lesson.id]) {
+        const draft = drafts[lesson.id];
+        draft.attempt ??= Math.max(attempts[lesson.id] ?? 0, results.filter(result => result.lessonId === lesson.id).length) + 1;
+        attempts[lesson.id] = Math.max(attempts[lesson.id] ?? 0, draft.attempt);
+      }
+    }
+    return { version: 2, goal: state.goal, drafts, attempts, results };
   } catch { return initialLearning(); }
 }
 

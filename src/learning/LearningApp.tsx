@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, BookOpen, Check, CheckCheck, ChevronRight, Clock3, Compass, FileCheck2, Flag, Layers3, Lightbulb, Menu, Target, TrendingUp, X } from "lucide-react";
 import { LanguageContext, LanguageSwitcher } from "../i18n";
 import { getSessionItem, setSessionItem } from "../session-storage";
-import { LESSONS, SKILLS, LEARNING_KEY, initialDraft, initialLearning, isLessonComplete, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
+import { LESSONS, SKILLS, LEARNING_KEY, beginLesson, nextLessonAttempt, saveLessonDraft, initialDraft, initialLearning, isLessonComplete, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
 import { LessonReview, Workspace } from "./Workspace";
 import "./learning.css";
 
@@ -78,7 +78,7 @@ export function LearningApp() {
   }, [hash]);
   const navigate = (route: string) => { location.hash = route; setMenu(false); };
   const start = (id: string) => {
-    if (!state.drafts[id]) setState(previous => ({ ...previous, drafts: { ...previous.drafts, [id]: initialDraft(id) } }));
+    setState(previous => beginLesson(previous, id));
     navigate(`lesson/${id}`);
   };
   const latestResults = new Map(state.results.map(result => [result.lessonId, result]));
@@ -122,7 +122,7 @@ export function LearningApp() {
       <header className="learn-topbar"><div className="learn-topbar-left"><button className="learn-mobile-menu" aria-label={c("Toggle navigation", "Открыть меню")} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={20} /> : <Menu size={20} />}</button><span>{c("Workspace", "Личный кабинет")}</span><ChevronRight size={13} /><b>{isProgress ? c("Progress", "Прогресс") : activeLesson ? c("Practice", "Практика") : result ? c("Lesson review", "Разбор занятия") : c("Learning", "Обучение")}</b></div><div className="learn-topbar-right"><LanguageSwitcher /><div className="learn-profile"><span>{c("L", "У")}</span><div>{c("Your workspace", "Ваш кабинет")}<small>{c("Learning without an account", "Можно учиться без регистрации")}</small></div></div></div></header>
       <main className="learn-main" id="learning-main" ref={main} tabIndex={-1}>
         {saveError && <p className="learn-save-warning" role="status">{c("Browser storage is unavailable. Your progress stays in this tab until you close or reload it.", "Хранилище браузера недоступно. Прогресс сохранится только в этой вкладке до закрытия или перезагрузки.")}</p>}
-        {activeLesson ? <Workspace key={activeLesson.id} attempt={state.results.filter(entry => entry.lessonId === activeLesson.id).length + 1} lesson={activeLesson} draft={state.drafts[activeLesson.id] ?? initialDraft(activeLesson.id)} onDraft={(draft: LessonDraft) => setState(previous => ({ ...previous, drafts: { ...previous.drafts, [activeLesson.id]: draft } }))} onComplete={submission => { setState(previous => { const drafts = { ...previous.drafts }; delete drafts[activeLesson.id]; return { ...previous, results: [...previous.results, submission].slice(-100), drafts }; }); navigate(`review/${submission.at}`); }} onExit={() => navigate("learn")} language={language} /> : result && reviewedLesson ? <LessonReview lesson={reviewedLesson} result={result} recommendation={recommended} onStart={start} onHome={() => navigate("learn")} language={language} /> : isProgress ? <>
+        {activeLesson ? <Workspace key={activeLesson.id} lesson={activeLesson} draft={state.drafts[activeLesson.id] ?? initialDraft(activeLesson.id, nextLessonAttempt(state, activeLesson.id))} onDraft={(draft: LessonDraft) => setState(previous => saveLessonDraft(previous, activeLesson.id, draft))} onComplete={submission => { setState(previous => { const drafts = { ...previous.drafts }; delete drafts[activeLesson.id]; return { ...previous, results: [...previous.results, submission].slice(-100), drafts }; }); navigate(`review/${submission.at}`); }} onExit={() => navigate("learn")} language={language} /> : result && reviewedLesson ? <LessonReview lesson={reviewedLesson} result={result} recommendation={recommended} onStart={start} onHome={() => navigate("learn")} language={language} /> : isProgress ? <>
           <div className="learn-page-heading"><div><p className="learn-eyebrow">{c("EVERY ATTEMPT COUNTS", "КАЖДАЯ ПОПЫТКА — ЭТО ОПЫТ")}</p><h1 tabIndex={-1}>{c("See how far you’ve come", "Ваш прогресс в деталях")}</h1><p>{c("Find your strengths and choose what to practice next.", "Посмотрите, что уже получается и чему уделить внимание.")}</p></div></div>
           <div className="learn-progress-summary"><div><span>{c("Completed lessons", "Пройдено занятий")}</span><strong>{completed.size}<small> / {LESSONS.length}</small></strong></div><div><span>{c("Total attempts", "Всего попыток")}</span><strong>{state.results.length}</strong></div><div><span>{c("Skills practiced", "Навыков в работе")}</span><strong>{SKILLS.filter(skill => skillScore(skill.id) !== undefined).length}<small> / 3</small></strong></div></div>
           <div className="learn-section-title"><h2>{c("Your skill map", "Ваша карта навыков")}</h2><span>{c("Latest attempt for each skill", "Последняя попытка по каждому навыку")}</span></div>

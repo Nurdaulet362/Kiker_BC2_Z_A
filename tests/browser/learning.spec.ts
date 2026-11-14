@@ -94,6 +94,30 @@ test("answer order stays fixed during an attempt and uses the next attempt seed 
   await expect.poll(ids).toEqual(shuffleOptions(cancelled.diagnosis, `${cancelled.id}:2:diagnosis`).map(option => option.id));
 });
 
+test("a saved draft keeps its seed beyond the hundred-result history limit", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (localStorage.getItem("attempt-counter-fixture")) return;
+    const result = { lessonId: "revenue-cancelled", score: 100, diagnosisPassed: true, repairPassed: true, transferPassed: true, hintLevel: 0, solutionRevealed: false, checks: [], at: "2026-11-14T10:00:00.000Z" };
+    localStorage.setItem("fix-the-report.learning.v2", JSON.stringify({ version: 2, goal: "all", drafts: {}, attempts: { "revenue-cancelled": 120 }, results: Array.from({ length: 100 }, () => result) }));
+    localStorage.setItem("attempt-counter-fixture", "set");
+  });
+  await startCancelled(page);
+  const ids = () => page.locator('input[name="diagnosis"]').evaluateAll(inputs => inputs.map(input => (input as HTMLInputElement).value));
+  const expected = shuffleOptions(cancelled.diagnosis, `${cancelled.id}:121:diagnosis`).map(option => option.id);
+  await expect.poll(ids).toEqual(expected);
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("fix-the-report.learning.v2")!);
+    state.results = [];
+    localStorage.setItem("fix-the-report.learning.v2", JSON.stringify(state));
+  });
+  await page.reload();
+  await expect.poll(ids).toEqual(expected);
+  await submitCancelled(page);
+  await page.getByRole("button", { name: "Попробовать ещё раз", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
+  await expect.poll(ids).toEqual(shuffleOptions(cancelled.diagnosis, `${cancelled.id}:122:diagnosis`).map(option => option.id));
+});
+
 test("lesson review uses persisted score components and supports older reviews without them", async ({ page }) => {
   await page.addInitScript(() => {
     const result = {

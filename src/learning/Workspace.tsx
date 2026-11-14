@@ -38,7 +38,6 @@ type WorkspaceProps = {
   onComplete: (result: LessonResult) => void;
   onExit: () => void;
   language: Language;
-  attempt: number;
 };
 
 function text(language: Language, en: string, ru: string) {
@@ -88,7 +87,7 @@ function Choice({
   );
 }
 
-export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language, attempt }: WorkspaceProps) {
+export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language }: WorkspaceProps) {
   const tr = (en: string, ru: string) => text(language, en, ru);
   const heading = useRef<HTMLHeadingElement>(null);
   const [preview, setPreview] = useState<{ value?: number | string; error?: string } | null>(null);
@@ -102,8 +101,8 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
   const requestId = useRef(0);
   const rowsError = validateLessonRows(lesson, draft.rows);
   const normalizedRows = rowsError ? draft.rows : normalizeRows(lesson, draft.rows);
-  const diagnosisOptions = shuffleOptions(lesson.diagnosis, `${lesson.id}:${attempt}:diagnosis`);
-  const transferOptions = shuffleOptions(lesson.transfer.options, `${lesson.id}:${attempt}:transfer`);
+  const diagnosisOptions = shuffleOptions(lesson.diagnosis, `${lesson.id}:${draft.attempt}:diagnosis`);
+  const transferOptions = shuffleOptions(lesson.transfer.options, `${lesson.id}:${draft.attempt}:transfer`);
 
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
