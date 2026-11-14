@@ -78,13 +78,22 @@ function flushKey(key: string): void {
   try {
     const merged = mergeValue(key, physical.value, incoming);
     const needsBackup = policies.get(key)?.needsBackup;
-    // Prefer durable bytes when both inputs lose data; keep one backup slot.
+    // Prefer durable bytes when both inputs lose data.
     const original = needsBackup ? [physical.value, backupSources.get(key), incoming].find(
       (source): source is string => typeof source === "string" && needsBackup(source, merged),
     ) : undefined;
     // Even an unchanged primary value may have filtered an invalid local input.
     // Backup failure aborts replacement and leaves all pending memory intact.
-    if (original !== undefined) localStorage.setItem(`${key}.backup`, original);
+    if (original !== undefined) {
+      const backupKey = `${key}.backup`;
+      const previous = localStorage.getItem(backupKey);
+      // A failed primary write can retry the same source. Do not rotate it
+      // again and replace the previous distinct recovery copy with a duplicate.
+      if (previous !== original) {
+        if (previous !== null) localStorage.setItem(`${backupKey}.prev`, previous);
+        localStorage.setItem(backupKey, original);
+      }
+    }
     if (merged !== physical.value) localStorage.setItem(key, merged);
     backupSources.delete(key);
     pending.delete(key);

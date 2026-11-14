@@ -25,7 +25,10 @@ test("two tabs retain both real submissions after concurrent work and reloads", 
   await open(page, cancelled);
   await open(other, conversion);
   await Promise.all([complete(page, cancelled), complete(other, conversion)]);
-  await expect.poll(() => page.evaluate(key => JSON.parse(localStorage.getItem(key)!).results.length, key)).toBe(2);
+  await expect.poll(() => page.evaluate(key => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw).results.length : 0;
+  }, key)).toBe(2);
   for (const tab of [page, other]) {
     await tab.goto("/#progress");
     await expect(tab.locator(".learn-history-list button")).toHaveCount(2);

@@ -145,12 +145,18 @@ export function createWorkerPool(factory: () => Worker, timeoutMs: number): Work
     request<T>(payload: object, signal?: AbortSignal): Promise<T> {
       if (disposed || signal?.aborted) return Promise.reject(aborted());
       return new Promise<T>((resolve, reject) => {
-        let current: Worker;
         let message: PendingRequest["message"];
         try {
-          current = start();
           // Replays must use the submitted data even if a caller later edits it.
           message = { ...structuredClone(payload), id: ++nextId };
+        } catch {
+          // Invalid input must not interrupt work already owned by the pool.
+          reject(new FormulaWorkerError("start"));
+          return;
+        }
+        let current: Worker;
+        try {
+          current = start();
         } catch {
           stop(new FormulaWorkerError("start"));
           reject(new FormulaWorkerError("start"));

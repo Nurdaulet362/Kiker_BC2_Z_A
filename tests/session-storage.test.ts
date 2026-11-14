@@ -224,10 +224,12 @@ describe("debounced, synchronized session storage", () => {
     storage.values.set("learning", encode());
     storage.values.set("unrelated", "old");
     storage.values.set("learning.backup", '{"version":99}');
+    storage.values.set("learning.backup.prev", '{"version":99}');
     const status = vi.fn();
     api.subscribeSaveStatus("learning", status);
     storageEvent("unrelated");
     storageEvent("learning.backup");
+    storageEvent("learning.backup.prev");
     expect(storage.getItem).not.toHaveBeenCalled();
     expect(storage.setItem).not.toHaveBeenCalled();
     expect(status.mock.calls).toEqual([["ok"]]);

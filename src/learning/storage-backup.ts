@@ -9,9 +9,10 @@ export function needsLearningBackup(source: string, merged: string): boolean {
   if (restored.results.length > next.results.length) return true;
   const ids = new Set(next.results.map(result => result.id));
   if (restored.results.some(result => !ids.has(result.id))) return true;
-  // Closing or superseding a draft also removes a record. Keep its original
-  // bytes in the single backup slot, even when that removal is intentional.
+  // A confirmed completion intentionally removes its draft. Preserve recovery
+  // copies for actual loss, including an unconfirmed draft being superseded.
   return Object.entries(restored.drafts).some(([lessonId, draft]) => {
+    if ((next.closedAttempts[lessonId] ?? 0) >= draft.attempt) return false;
     const replacement = next.drafts[lessonId];
     return !replacement || replacement.attempt !== draft.attempt;
   });

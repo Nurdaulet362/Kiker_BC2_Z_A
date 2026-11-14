@@ -62,6 +62,49 @@ describe("persistent worker pool", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("rejects an uncloneable payload before constructing a worker and accepts the next request", async () => {
+    const { pool, workers, factory } = setup();
+    await expect(pool.request({ value: () => 42 })).rejects.toMatchObject({ code: "start" });
+    expect(factory).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    const next = pool.request<number>({ value: 42 });
+    expect(factory).toHaveBeenCalledTimes(1);
+    workers[0].reply({ id: workers[0].messages[0].id, result: 42 });
+    await expect(next).resolves.toBe(42);
+    expect(workers[0].terminate).not.toHaveBeenCalled();
+  });
+
+  it("isolates a clone failure from an already pending successful request", async () => {
+    const { pool, workers, factory } = setup();
+    const active = pool.request<number>({ value: 7 }).catch(error => error);
+    await expect(pool.request({ value: () => 42 })).rejects.toMatchObject({ code: "start" });
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(workers[0].terminate).not.toHaveBeenCalled();
+    expect(workers[0].messages).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(1);
+    workers[0].reply({ id: workers[0].messages[0].id, result: 7 });
+    expect(await active).toBe(7);
+    expect(vi.getTimerCount()).toBe(0);
+    const next = pool.request<number>({ value: 8 });
+    workers[0].reply({ id: workers[0].messages[1].id, result: 8 });
+    await expect(next).resolves.toBe(8);
+    expect(factory).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not cancel or restart the oldest request's watchdog when cloning fails", async () => {
+    const { pool, workers, factory } = setup();
+    const hung = pool.request({ formula: "hung" }).catch(error => error);
+    await vi.advanceTimersByTimeAsync(60);
+    await expect(pool.request({ value: () => 42 })).rejects.toMatchObject({ code: "start" });
+    await vi.advanceTimersByTimeAsync(39);
+    expect(workers[0].terminate).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await hung).toMatchObject({ code: "timeout" });
+    expect(workers[0].terminate).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("times out only a hung preview and replays the queued assessment on a fresh worker", async () => {
     const { pool, workers, factory } = setup();
     const preview = pool.request({ type: "preview" }).catch(error => error);
