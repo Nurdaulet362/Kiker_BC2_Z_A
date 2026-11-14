@@ -73,7 +73,11 @@ export function calculateGrid(
         error: `${match[1].toUpperCase()} is outside this exercise. Try SUMIF, SUM or IF.`,
       };
   }
-  for (const match of withoutStrings.matchAll(/\$?([A-Z]+)\$?(\d+)/gi)) {
+  const withoutNumbers = withoutStrings.replace(
+    /(?<![A-Za-z_$.\d])\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g,
+    " ",
+  );
+  for (const match of withoutNumbers.matchAll(/\$?([A-Z]+)\$?(\d+)/gi)) {
     if (
       match[1].length !== 1 ||
       match[1].toUpperCase().charCodeAt(0) - 64 > lastColumn ||
@@ -105,7 +109,14 @@ export function calculateGrid(
         );
       },
     });
-    const value = parser.parse(expression, {
+    // The installed parser requires an explicit exponent sign (1E+5).
+    // Quoted strings and cell references must keep their original spelling.
+    const parserExpression = expression.replace(
+      /"(?:[^"]|"")*"|(?<![A-Za-z_$.\d])(\d+(?:\.\d+)?)[eE](\d+)/g,
+      (token, base: string | undefined, exponent: string) =>
+        base === undefined ? token : `${base}E+${exponent}`,
+    );
+    const value = parser.parse(parserExpression, {
       row: 103,
       col: 3,
       sheet: "Orders",

@@ -66,6 +66,26 @@ describe("cancelled order exercise", () => {
       ]),
     ).toBe(0.3);
   });
+  it("distinguishes scientific notation from bounded cell references", () => {
+    const rows = initialProgress().rows;
+    for (const [formula, expected] of [
+      ["=SUM(C2:C101)*1E5", 120000000],
+      ["=SUM(C2:C101)+2.5e3", 3700],
+      ["=SUM(C2:C101)*1E-3", 1.2],
+      ['=IF("1E5"="1E+5",0,SUM(C2:C101))', 1200],
+      ["=ROUND(SUM(C2:C101),2)", 1200],
+      ["=SUM($C$2:$C$101)", 1200],
+      ['=SUMIF(B2:B101,"Paid",C2:C101)+SUM(A101)', 1200],
+    ] as const) {
+      expect(calculate(formula, rows), formula).toEqual({ value: expected });
+    }
+    for (const formula of [
+      "=SUM(E5)", "=SUM($E$5)", "=SUM(C2:C102)", "=SUM(AA1)",
+      "=SUM(A102)", "=SUM(B0:B101)",
+    ]) {
+      expect(calculate(formula, rows).error, formula).toMatch(/100 data rows/);
+    }
+  });
   it("restores valid progress and recovers from corrupt local storage", () => {
     const original = initialProgress();
     expect(restoreProgress(JSON.stringify(original))).toEqual(original);
