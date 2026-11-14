@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-14T08:30:43.722Z",
+  "title": "Design System: Fix the Report",
+  "extensions": {
+    "colorMeta": {
+      "purple": {
+        "role": "primary",
+        "displayName": "Workbook Violet",
+        "tonalRamp": [
+          "oklch(15% 0.045 290)",
+          "oklch(26% 0.090 290)",
+          "oklch(37% 0.128 290)",
+          "oklch(49% 0.150 290)",
+          "oklch(61% 0.150 290)",
+          "oklch(73% 0.120 290)",
+          "oklch(85% 0.075 290)",
+          "oklch(95% 0.030 290)"
+        ]
+      },
+      "purple-dark": {
+        "role": "primary",
+        "displayName": "Pressed Violet",
+        "tonalRamp": [
+          "oklch(15% 0.045 290)",
+          "oklch(26% 0.090 290)",
+          "oklch(37% 0.128 290)",
+          "oklch(49% 0.150 290)",
+          "oklch(61% 0.150 290)",
+          "oklch(73% 0.120 290)",
+          "oklch(85% 0.075 290)",
+          "oklch(95% 0.030 290)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Printed Ink",
+        "tonalRamp": [
+          "oklch(15% 0.011 285)",
+          "oklch(26% 0.021 285)",
+          "oklch(37% 0.030 285)",
+          "oklch(49% 0.035 285)",
+          "oklch(61% 0.035 285)",
+          "oklch(73% 0.028 285)",
+          "oklch(85% 0.018 285)",
+          "oklch(95% 0.007 285)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Annotation Gray",
+        "tonalRamp": [
+          "oklch(15% 0.009 285)",
+          "oklch(26% 0.018 285)",
+          "oklch(37% 0.025 285)",
+          "oklch(49% 0.030 285)",
+          "oklch(61% 0.030 285)",
+          "oklch(73% 0.024 285)",
+          "oklch(85% 0.015 285)",
+          "oklch(95% 0.006 285)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "tonalRamp": [
+          "oklch(15% 0.004 265)",
+          "oklch(26% 0.007 265)",
+          "oklch(37% 0.010 265)",
+          "oklch(49% 0.012 265)",
+          "oklch(61% 0.012 265)",
+          "oklch(73% 0.010 265)",
+          "oklch(85% 0.006 265)",
+          "oklch(95% 0.002 265)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "White Sheet",
+        "tonalRamp": [
+          "oklch(15% 0.000 0)",
+          "oklch(26% 0.000 0)",
+          "oklch(37% 0.000 0)",
+          "oklch(49% 0.000 0)",
+          "oklch(61% 0.000 0)",
+          "oklch(73% 0.000 0)",
+          "oklch(85% 0.000 0)",
+          "oklch(95% 0.000 0)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Rule Gray",
+        "tonalRamp": [
+          "oklch(15% 0.004 285)",
+          "oklch(26% 0.009 285)",
+          "oklch(37% 0.013 285)",
+          "oklch(49% 0.015 285)",
+          "oklch(61% 0.015 285)",
+          "oklch(73% 0.012 285)",
+          "oklch(85% 0.007 285)",
+          "oklch(95% 0.003 285)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "tonalRamp": [
+          "oklch(15% 0.018 285)",
+          "oklch(26% 0.036 285)",
+          "oklch(37% 0.051 285)",
+          "oklch(49% 0.060 285)",
+          "oklch(61% 0.060 285)",
+          "oklch(73% 0.048 285)",
+          "oklch(85% 0.030 285)",
+          "oklch(95% 0.012 285)"
+        ]
+      },
+      "green": {
+        "role": "semantic",
+        "displayName": "Verified Green",
+        "tonalRamp": [
+          "oklch(15% 0.033 160)",
+          "oklch(26% 0.066 160)",
+          "oklch(37% 0.093 160)",
+          "oklch(49% 0.110 160)",
+          "oklch(61% 0.110 160)",
+          "oklch(73% 0.088 160)",
+          "oklch(85% 0.055 160)",
+          "oklch(95% 0.022 160)"
+        ]
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "Guidance Amber",
+        "tonalRamp": [
+          "oklch(15% 0.033 85)",
+          "oklch(26% 0.066 85)",
+          "oklch(37% 0.093 85)",
+          "oklch(49% 0.110 85)",
+          "oklch(61% 0.110 85)",
+          "oklch(73% 0.088 85)",
+          "oklch(85% 0.055 85)",
+          "oklch(95% 0.022 85)"
+        ]
+      },
+      "error": {
+        "role": "semantic",
+        "displayName": "Correction Red",
+        "tonalRamp": [
+          "oklch(15% 0.045 28)",
+          "oklch(26% 0.090 28)",
+          "oklch(37% 0.128 28)",
+          "oklch(49% 0.150 28)",
+          "oklch(61% 0.150 28)",
+          "oklch(73% 0.120 28)",
+          "oklch(85% 0.075 28)",
+          "oklch(95% 0.030 28)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Exercise heading",
+        "purpose": "Main exercise heading."
+      },
+      "body": {
+        "displayName": "Brief and help copy",
+        "purpose": "Readable prose in briefs and help."
+      },
+      "label": {
+        "displayName": "Action label",
+        "purpose": "Buttons and navigation."
+      },
+      "formula": {
+        "displayName": "Formula",
+        "purpose": "Spreadsheet expressions."
+      },
+      "total": {
+        "displayName": "Report total",
+        "purpose": "The computed amount in the validation panel."
+      }
+    },
+    "shadows": [
+      {
+        "name": "dialog",
+        "value": "0 24px 80px #19132f33",
+        "purpose": "Dialog elevation above the dark translucent backdrop."
+      }
+    ],
+    "motion": [
+      {
+        "name": "verification-spinner",
+        "value": "spin 1s linear infinite",
+        "purpose": "Verification busy state; disabled by prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1600px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1150px"
+      },
+      {
+        "name": "brand-bar",
+        "value": "940px"
+      },
+      {
+        "name": "stacked-workspace",
+        "value": "680px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action for testing or verifying a report.",
+      "html": "<button class=\"ds-primary\">Test the report <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M5 12h14m-6-6 6 6-6 6\"/></svg></button>",
+      "css": ".ds-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:1px solid transparent;border-radius:7px;padding:11px 16px;font:500 13px \"DM Sans\",sans-serif;cursor:pointer;background:var(--purple,#6552d8);color:#fff}.ds-primary:hover:not(:disabled){background:var(--purple-dark,#5140b7)}.ds-primary:focus-visible{outline:3px solid #a396ee;outline-offset:3px}.ds-primary:disabled{opacity:.55;cursor:not-allowed}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A supporting action in completion and reset flows.",
+      "html": "<button class=\"ds-secondary\">Keep working</button>",
+      "css": ".ds-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:1px solid transparent;border-radius:7px;padding:11px 16px;font:500 13px \"DM Sans\",sans-serif;cursor:pointer;background:#fff;color:#504660;border-color:#d5cfdf}.ds-secondary:hover{background:#f4f1fa}.ds-secondary:focus-visible{outline:3px solid #a396ee;outline-offset:3px}.ds-secondary:disabled{opacity:.55;cursor:not-allowed}"
+    },
+    {
+      "name": "Amount Field",
+      "kind": "input",
+      "refersTo": "amount-input",
+      "description": "Right-aligned editable spreadsheet money, with an explicit accessible label.",
+      "html": "<label class=\"ds-field\">Amount (USD)<input class=\"ds-amount\" inputmode=\"decimal\" value=\"300.00\" aria-label=\"Amount for ORD-1041\"></label>",
+      "css": ".ds-field{display:block;max-width:220px;font:500 11px \"DM Sans\",sans-serif;color:var(--muted,#696a7e)}.ds-amount{display:block;width:100%;margin-top:8px;border:1px solid transparent;border-radius:4px;background:transparent;color:#383447;padding:7px 4px;text-align:right;font:13px \"DM Sans\",sans-serif;font-variant-numeric:tabular-nums;caret-color:var(--purple,#6552d8)}.ds-amount:hover{border-color:#d7d1ed;background:#fff}.ds-amount:focus-visible{outline:3px solid #a396ee;outline-offset:3px}"
+    },
+    {
+      "name": "Lesson Navigation",
+      "kind": "nav",
+      "refersTo": "lesson-navigation",
+      "description": "The selected lesson and current learning step, shown as non-interactive progress context.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Exercise progress\"><div class=\"ds-lesson\"><strong>The cancelled order</strong><span>Revenue reporting</span></div><ol class=\"ds-steps\"><li aria-current=\"step\"><span class=\"ds-index\">1</span><div><strong>Find the mistake</strong><span>Put the report to the test</span></div></li></ol></nav>",
+      "css": ".ds-nav{width:210px;padding:18px;background:#252542;color:#f1f0fc;font-family:\"DM Sans\",sans-serif}.ds-lesson{border-radius:9px;padding:14px 11px;background:#3c385b}.ds-lesson strong{display:block;font-size:13px;font-weight:600}.ds-lesson span{display:block;margin-top:5px;color:#c1bdd8;font-size:12px}.ds-steps{list-style:none;margin:24px 9px 0;padding:0}.ds-steps li{display:flex;gap:12px}.ds-index{display:grid;place-items:center;width:27px;height:27px;border:1px solid #9d8af6;border-radius:50%;background:#9d8af6;color:#25213f;font-size:13px;font-weight:700}.ds-steps strong{display:block;font-size:13px;font-weight:500;margin:4px 0 5px;color:white}.ds-steps div>span{display:block;color:#b0adc7;font-size:11px}"
+    },
+    {
+      "name": "Validation Panel",
+      "kind": "card",
+      "refersTo": "validation-panel",
+      "description": "A computed total and separately labelled expected result.",
+      "html": "<section class=\"ds-panel\" aria-label=\"Report validation\"><div class=\"ds-result-heading\"><h2>Report total</h2><span class=\"ds-live\">Live</span></div><div class=\"ds-total\">$2,450.00</div><p class=\"ds-description\">Calculated by your current formula.</p><div class=\"ds-expected\"><span>Expected paid revenue</span><strong>$2,450.00</strong></div></section>",
+      "css": ".ds-panel{max-width:288px;border:1px solid var(--line,#e4e5ee);border-radius:12px;background:#fff;color:var(--ink,#29293c);padding:23px 21px 22px;font-family:\"DM Sans\",sans-serif}.ds-result-heading{display:flex;align-items:center;justify-content:space-between}.ds-result-heading h2{margin:0;font-size:13px;font-weight:500;color:#655f77}.ds-live{display:flex;align-items:center;gap:5px;font-size:10px;color:#647461}.ds-live:before{content:\"\";width:5px;height:5px;border-radius:50%;background:#508b6d}.ds-total{font-size:37px;font-weight:500;letter-spacing:-1.5px;line-height:1.5;margin-top:9px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.ds-description{margin:0;font-size:11px;line-height:1.6;color:#7b748b}.ds-expected{display:flex;justify-content:space-between;gap:6px;margin-top:20px;color:#645970;font-size:12px}.ds-expected strong{color:var(--green,#257458);font-weight:600;font-variant-numeric:tabular-nums}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Editorial Training Workbook",
+    "overview": "The Editorial Training Workbook uses a dark ink-violet navigation rail, quiet paper surfaces and compact annotations to make practical work feel legible and considered. DM Sans carries the interface; monospaced formulas and tabular money values make the underlying evidence easy to inspect.\n\nControls are restrained and familiar. Violet identifies actions, while green, amber and red communicate outcomes beside explicit text. This document records the implemented direction; descriptive names and atmosphere are implementation assumptions made under the user’s delegation, not a separately approved brand identity.",
+    "keyCharacteristics": [
+      "Compact editorial hierarchy with generous separation between work areas.",
+      "Flat worksheet surfaces, explicit borders and a dark navigation anchor.",
+      "Visible formulas, aligned figures and feedback explained in words."
+    ],
+    "rules": [
+      {
+        "name": "The Explicit Status Rule",
+        "body": "Pair semantic colors with labels or explanatory text.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do use the muted token for small neutral worksheet labels.",
+      "Do preserve tabular money values and separate reported totals from expected totals.",
+      "Do keep visible focus outlines and pair status colors with text.",
+      "Do stack the worksheet and validation panel on narrow screens."
+    ],
+    "donts": [
+      "Don’t replace the status selector with a decorative badge.",
+      "Don’t remove the border separating worksheet regions.",
+      "Don’t apply dialog shadows to ordinary worksheet panels."
+    ]
+  }
+}
