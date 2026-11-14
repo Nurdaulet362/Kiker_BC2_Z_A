@@ -388,3 +388,25 @@ describe("adaptive learning cases", () => {
     expect(restoreLearning(JSON.stringify({ ...state, results: [{ lessonId: "unknown", score: 100 }] })).results).toEqual([]);
   });
 });
+
+
+it("restores sparse hint evidence without history and never reuses those attempt numbers", () => {
+  const id = "revenue-cancelled";
+  const state = restoreLearning(JSON.stringify({ ...initialLearning(), attempts: {}, attemptHints: { [id]: { "12": 3 } } }));
+  expect(state.attempts[id]).toBe(12);
+  expect(beginLesson(state, id).drafts[id].attempt).toBe(13);
+  expect(beginLesson(state, id).drafts[id].hintLevel).toBe(0);
+  expect(restoreLearning(JSON.stringify(state))).toEqual(state);
+});
+
+it("keeps valid hint records and reports discarded invalid ledger entries for backup", () => {
+  const id = "revenue-cancelled";
+  const audit = { discarded: false };
+  const state = restoreLearning(JSON.stringify({ ...initialLearning(), attemptHints: {
+    [id]: { "2": 3, "0": 1, "unsafe": 2, "9007199254740992": 3, "3": 4 },
+    "conversion-weighted": null,
+    "unknown-lesson": { "1": 3 },
+  } }), audit);
+  expect(state.attemptHints).toEqual({ [id]: { "2": 3 } });
+  expect(audit.discarded).toBe(true);
+});

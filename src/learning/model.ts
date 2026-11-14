@@ -67,6 +67,7 @@ export type LearningState = {
   drafts: Record<string, LessonDraft>;
   attempts: Record<string, number>;
   closedAttempts: Record<string, number>;
+  attemptHints: Record<string, Record<string, HintLevel>>;
   goalUpdatedAt?: string;
   goal: SkillId | "all";
 };
@@ -216,7 +217,7 @@ export function initialDraft(lessonId: string, attempt = 1): LessonDraft {
 }
 
 export function initialLearning(): LearningState {
-  return { version: 2, results: [], drafts: {}, attempts: {}, closedAttempts: {}, goal: "all" };
+  return { version: 2, results: [], drafts: {}, attempts: {}, closedAttempts: {}, attemptHints: {}, goal: "all" };
 }
 
 export function nextLessonAttempt(state: LearningState, lessonId: string): number {
@@ -236,10 +237,11 @@ export function setLearningGoal(state: LearningState, goal: LearningState["goal"
 export function saveLessonDraft(state: LearningState, lessonId: string, draft: LessonDraft): LearningState {
   if ((state.closedAttempts[lessonId] ?? 0) >= draft.attempt) return state;
   const previous = state.drafts[lessonId];
-  const hintLevel = previous?.attempt === draft.attempt ? Math.max(previous.hintLevel, draft.hintLevel) as HintLevel : draft.hintLevel;
+  const hintLevel = Math.max(draft.hintLevel, previous?.attempt === draft.attempt ? previous.hintLevel : 0, state.attemptHints[lessonId]?.[draft.attempt] ?? 0) as HintLevel;
   return {
     ...state,
     drafts: { ...state.drafts, [lessonId]: { ...draft, hintLevel, updatedAt: editTimestamp(previous?.updatedAt, draft.updatedAt) } },
+    attemptHints: hintLevel > 0 ? { ...state.attemptHints, [lessonId]: { ...state.attemptHints[lessonId], [draft.attempt]: hintLevel } } : state.attemptHints,
     attempts: { ...state.attempts, [lessonId]: Math.max(state.attempts[lessonId] ?? 0, draft.attempt) },
   };
 }
@@ -364,19 +366,38 @@ export function migrate(raw: string | null, audit?: LearningRestoreAudit): Learn
       const closed = Number.isSafeInteger(saved) && saved > 0 ? saved : 0;
       if (closed > 0) closedAttempts[lesson.id] = closed;
     }
+    const attemptHints: LearningState["attemptHints"] = {};
+    if (state.attemptHints !== undefined) {
+      if (!state.attemptHints || typeof state.attemptHints !== "object" || Array.isArray(state.attemptHints)) {
+        if (audit) audit.discarded = true;
+      } else for (const [lessonId, entries] of Object.entries(state.attemptHints)) {
+        if (!LESSONS.some(lesson => lesson.id === lessonId) || !entries || typeof entries !== "object" || Array.isArray(entries)) {
+          if (audit) audit.discarded = true;
+          continue;
+        }
+        for (const [attempt, level] of Object.entries(entries)) {
+          if (!/^[1-9]\d*$/.test(attempt) || !Number.isSafeInteger(Number(attempt)) || ![0, 1, 2, 3].includes(level)) {
+            if (audit) audit.discarded = true;
+            continue;
+          }
+          if (level > 0) (attemptHints[lessonId] ??= {})[attempt] = level;
+        }
+      }
+    }
     const attempts: Record<string, number> = {};
     for (const lesson of LESSONS) {
       const saved = state.attempts?.[lesson.id];
       if (Number.isSafeInteger(saved) && saved >= 0) attempts[lesson.id] = saved;
       else if (state.attempts === undefined) attempts[lesson.id] = validResults.filter(result => result.lessonId === lesson.id).length;
-      if (closedAttempts[lesson.id]) attempts[lesson.id] = Math.max(attempts[lesson.id] ?? 0, closedAttempts[lesson.id]);
+      const knownAttempt = Math.max(closedAttempts[lesson.id] ?? 0, ...Object.keys(attemptHints[lesson.id] ?? {}).map(Number));
+      if (knownAttempt > 0) attempts[lesson.id] = Math.max(attempts[lesson.id] ?? 0, knownAttempt);
       if (drafts[lesson.id]) {
         const draft = drafts[lesson.id];
         draft.attempt ??= Math.max(attempts[lesson.id] ?? 0, results.filter(result => result.lessonId === lesson.id).length) + 1;
         attempts[lesson.id] = Math.max(attempts[lesson.id] ?? 0, draft.attempt);
       }
     }
-    return { version: 2, goal: state.goal, drafts, attempts, closedAttempts, results,
+    return { version: 2, goal: state.goal, drafts, attempts, closedAttempts, attemptHints, results,
       ...(typeof state.goalUpdatedAt === "string" && Number.isFinite(Date.parse(state.goalUpdatedAt)) ? { goalUpdatedAt: state.goalUpdatedAt } : {}),
     };
   } catch { return reject(); }
