@@ -5,7 +5,7 @@ test("complete the exercise, persist progress, retry and handle formula errors",
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
+  await page.goto("/#practice");
   await expect(page.locator(".report-total")).toHaveText("$1,200.00");
   await page.getByRole("button", { name: "Test the report" }).click();
   await expect(page.getByText("So far, so good")).toBeVisible();
@@ -51,7 +51,7 @@ test("mobile, empty rows, invalid amounts, hints, help and reset", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/#practice");
   await page.getByRole("button", { name: "How it works" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Got it" }).click();

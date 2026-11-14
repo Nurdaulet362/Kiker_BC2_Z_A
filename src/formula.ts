@@ -8,6 +8,8 @@ import {
 
 export type Calculation =
   { value: number; error?: never } | { error: string; value?: never };
+export type GridCalculation =
+  { value: number | "N/A"; error?: never } | { error: string; value?: never };
 export type Check = {
   name: string;
   description: string;
@@ -39,6 +41,24 @@ const FUNCTIONS = new Set([
 export function calculate(formula: string, rows: Order[]): Calculation {
   const rowError = validateRows(rows);
   if (rowError) return { error: rowError };
+  const data: (string | number)[][] = [
+    ["Order", "Status", "Amount"],
+    ...rows.map((row) => [row.id, row.status, Number(row.amount)]),
+  ];
+  const result = calculateGrid(formula, data);
+  if (result.value === "N/A")
+    return {
+      error: "Revenue must be a number, including zero for an empty report.",
+    };
+  return result as Calculation;
+}
+
+export function calculateGrid(
+  formula: string,
+  data: (string | number)[][],
+  lastColumn = 3,
+): GridCalculation {
+  const end = `${String.fromCharCode(64 + lastColumn)}101`;
   if (!formula.trim().startsWith("="))
     return { error: "Start your formula with =, for example =SUM(C2:C101)." };
   if (formula.length > 1000)
@@ -46,7 +66,7 @@ export function calculate(formula: string, rows: Order[]): Calculation {
   const expression = formula.trim().slice(1);
   const withoutStrings = expression.replace(/"(?:[^"]|"")*"/g, '""');
   if (/[!\[\]{}]/.test(withoutStrings))
-    return { error: "Use cells on this sheet, from A1 to C101." };
+    return { error: `Use cells on this sheet, from A1 to ${end}.` };
   for (const match of withoutStrings.matchAll(/([A-Z][A-Z0-9_.]*)\s*\(/gi)) {
     if (!FUNCTIONS.has(match[1].toUpperCase()))
       return {
@@ -55,20 +75,16 @@ export function calculate(formula: string, rows: Order[]): Calculation {
   }
   for (const match of withoutStrings.matchAll(/\$?([A-Z]+)\$?(\d+)/gi)) {
     if (
-      !["A", "B", "C"].includes(match[1].toUpperCase()) ||
+      match[1].length !== 1 ||
+      match[1].toUpperCase().charCodeAt(0) - 64 > lastColumn ||
       Number(match[2]) > 101 ||
       Number(match[2]) < 1
     ) {
       return {
-        error:
-          "Use cells from A1 to C101. This exercise has room for 100 orders.",
+        error: `Use cells from A1 to ${end}. This exercise has room for 100 data rows.`,
       };
     }
   }
-  const data: (string | number)[][] = [
-    ["Order", "Status", "Amount"],
-    ...rows.map((row) => [row.id, row.status, Number(row.amount)]),
-  ];
   const cell = (row: number, col: number) => data[row - 1]?.[col - 1] ?? null;
   try {
     const parser = new FormulaParser({
@@ -80,7 +96,7 @@ export function calculate(formula: string, rows: Order[]): Calculation {
         from: { row: number; col: number };
         to: { row: number; col: number };
       }) => {
-        if (from.row < 1 || to.row > 101 || from.col < 1 || to.col > 3)
+        if (from.row < 1 || to.row > 101 || from.col < 1 || to.col > lastColumn)
           throw new Error("range");
         return Array.from({ length: to.row - from.row + 1 }, (_, index) =>
           Array.from({ length: to.col - from.col + 1 }, (_, column) =>
@@ -94,9 +110,11 @@ export function calculate(formula: string, rows: Order[]): Calculation {
       col: 3,
       sheet: "Orders",
     });
+    if (value === "N/A") return { value };
     if (typeof value !== "number" || !Number.isFinite(value))
       return {
-        error: "Your formula needs to return one numeric revenue total.",
+        error:
+          "Your formula needs to return one number, or the text N/A when the brief requires it.",
       };
     return { value };
   } catch {

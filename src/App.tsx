@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   BookOpen,
   Check,
@@ -45,7 +46,7 @@ const hints = [
   'SUMIF checks a condition before adding a value. Use column B for the status, "Paid" as the condition, and column C for the amount.',
 ];
 
-function Modal({
+export function Modal({
   title,
   children,
   close,
@@ -55,12 +56,14 @@ function Modal({
   close: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     ref.current?.showModal();
   }, []);
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
       onCancel={close}
       onClick={(event) => {
         if (event.target === ref.current) close();
@@ -68,7 +71,7 @@ function Modal({
       className="modal"
     >
       <div className="modal-heading">
-        <h2>{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         <button
           aria-label="Close dialog"
           className="icon-button"
@@ -349,6 +352,10 @@ export function App() {
           </button>
         </header>
         <div className="content">
+          <a className="practice-return" href="#">
+            <ArrowLeft size={14} />
+            Back to work simulations
+          </a>
           {saveError && (
             <div role="status" className="notice warning">
               Your browser cannot save progress. Keep this tab open to continue
