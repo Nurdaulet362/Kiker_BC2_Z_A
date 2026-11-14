@@ -87,6 +87,8 @@ components:
 
 # Design System: Fix the Report
 
+> The default learning experience was rebuilt at the owner's request. Its current contract is in REDESIGN.md and its styles are scoped in `src/learning/learning.css`. The specification below remains applicable to the retained `#trial` and `#practice` routes, not the new dashboard.
+
 ## Overview
 
 **Creative North Star: "The Editorial Training Workbook"**

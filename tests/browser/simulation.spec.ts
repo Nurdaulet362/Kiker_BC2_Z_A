@@ -7,7 +7,7 @@ test("work trial: diagnose, repair, explain, persist, download and solve a new a
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/#trial");
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await expect(page.locator(".sim-live-result strong")).toHaveText("$3,280.00");
   await page.getByRole("button", { name: "Continue to conversion" }).click();
@@ -95,7 +95,7 @@ test("mobile: errors, source changes, hints, restore, and guided lesson navigati
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/#trial");
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByLabel("Amount for E-P101").fill("wrong");
   await expect(page.getByText(/Row 2 needs an amount/).first()).toBeVisible();

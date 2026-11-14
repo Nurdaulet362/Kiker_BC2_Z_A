@@ -1,4 +1,19 @@
-# Fix the Report — work trial
+# Fix the Report — learning product
+
+## Current two-minute demo
+
+1. Open `/`. The learner sees a recommended short assignment, six-case curriculum and real local progress. Switch RU/EN if needed.
+2. Start **Деньги, которых не было**, read the brief and open the report. Change the cancelled amount from $650 to $2,300: the erroneous SUM rises to $3,680 while paid revenue stays $1,200.
+3. Choose the missing status filter. Repair with `=SUMIF(B2:B101,"Paid",C2:C101)` and check the solution. The engine executes it against seven datasets, including changed statuses and a new row at 101.
+4. Continue to the separate transfer scenario. Choose $900 to show the rule was understood beyond the first report.
+5. The review separates diagnosis (20), repair (50) and transfer (30). Open the checks. Follow the next lesson recommendation and show saved progress.
+6. For the failure path, submit `=1200`: it matches the initial number but fails new data. The app recommends the refunds case in the same skill. A failure does not count as a completed lesson.
+
+The six authored lessons cover cancelled orders, weighted conversion, budget decisions, refunds, an omitted channel and holding budget when returns are negative or tied. This is a B2C learning hypothesis, with a real practice-and-feedback loop. Scores measure these exercises; learning outcomes and willingness to pay are not yet validated. The site remains local and unpublished at the owner's request.
+
+## Retained earlier work trial
+
+The material below documents the older connected assignment at `/#trial`. Its 30-check scoring is separate from the new lesson scoring above.
 
 ## Product hypothesis
 
@@ -8,7 +23,7 @@ The first complete assignment combines report repair and a business decision. Th
 
 ## Two-minute demo
 
-1. Open the root route. Start **The Friday revenue review**.
+1. Open `/#trial`. Start **The Friday revenue review**.
 2. The draft revenue formula reports **$3,280**. Paid revenue is **$1,800**; cancelled and pending orders are included by mistake.
 3. The draft conversion is **7.50%**. The correct rate is **15 paid orders / 250 leads = 6.00%**.
 4. Move to the decision. Both channels have $900 paid revenue. Email costs $200 and contributes $700; Ads costs $1,100 and contributes −$200. The draft's advice to choose Ads because of order volume is unjustified under the assignment rule.

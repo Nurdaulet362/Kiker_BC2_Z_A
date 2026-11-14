@@ -7,7 +7,7 @@ const conversion = '=IF(SUM(B2:B101)=0,"N/A",SUM(C2:C101)/SUM(B2:B101))';
 test("a saved review describes its submission, even after the draft is edited", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/#trial");
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByRole("button", { name: /3 Defend your decision/ }).click();
   await page.getByRole("radio", { name: "Ads", exact: true }).check();
@@ -54,7 +54,7 @@ test("a saved review describes its submission, even after the draft is edited", 
 test("keyboard help dialog keeps the background inert and restores focus", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/#trial");
   const trigger = page.getByRole("button", { name: "About this work trial" });
   await trigger.focus();
   await page.keyboard.press("Enter");
@@ -82,7 +82,7 @@ test("keyboard help dialog keeps the background inert and restores focus", async
 test("zero paid orders and zero leads can be completed with N/A conversion", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/#trial");
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByLabel("Paid revenue formula").fill(revenue);
   for (const status of await page.getByRole("combobox").all()) {
@@ -118,7 +118,7 @@ test("unavailable browser storage warns clearly and leaves the trial usable", as
       throw new DOMException("Blocked", "SecurityError");
     };
   });
-  await page.goto("/");
+  await page.goto("/#trial");
   await expect(
     page.getByText(/Your browser cannot save this session/),
   ).toBeVisible();
@@ -138,7 +138,7 @@ test("both exercise drafts survive route changes when browser storage is blocked
       throw new DOMException("Blocked", "SecurityError");
     };
   });
-  await page.goto("/");
+  await page.goto("/#trial");
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByLabel("Paid revenue formula").fill(revenue);
   await page
@@ -176,7 +176,7 @@ test("the complete work trial can be submitted using only the keyboard", async (
     }
     await expect(target).toBeFocused();
   };
-  await page.goto("/");
+  await page.goto("/#trial");
   await tabTo(page.getByRole("button", { name: "Start the work trial" }));
   await page.keyboard.press("Enter");
   await tabTo(page.getByLabel("Paid revenue formula"));

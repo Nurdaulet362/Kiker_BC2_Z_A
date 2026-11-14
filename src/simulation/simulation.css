@@ -657,6 +657,7 @@
   overflow-wrap: anywhere;
 }
 .sim-table-scroll {
+  position: relative;
   overflow: auto;
   max-height: 388px;
   scrollbar-gutter: stable;
@@ -1265,10 +1266,12 @@
 @media (max-width: 440px) {
   .sim-header {
     padding: 13px 16px;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px 10px;
   }
   .sim-header nav {
     gap: 5px;
+    margin-left: auto;
   }
   .sim-header nav a {
     font-size: 11px;

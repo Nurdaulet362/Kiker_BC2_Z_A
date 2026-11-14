@@ -1,8 +1,8 @@
 # Fix the Report
 
-A browser-based work simulation for adults preparing for a sales operations assessment. Built for the Zimran × AIESEC Business Cup MVP.
+A bilingual learning app for people who want to understand business reports and make better decisions from data. Built for the Zimran × AIESEC Business Cup MVP.
 
-The main experience, **The Friday revenue review**, connects revenue repair, overall conversion and an evidence-based budget-test recommendation. The learner submits work, gets a transparent review across three skills, practices gaps and retries on changed data. The earlier **The cancelled order** exercise remains available as guided practice.
+The rebuilt default experience is a personal learning workspace with **six short cases across revenue, conversion and decisions**. Each lesson follows a complete loop: read the brief, experiment with the report, repair the calculation or recommendation, apply the principle to a new situation, review the result and continue to a recommended case. Russian is the default language; English is available throughout. This version remains local and unpublished.
 
 The repository also contains four developer skills adapted from the sources requested by the project owner. See [SKILLS.md](SKILLS.md) for provenance, installation, validation and their concrete application to the site.
 
@@ -15,11 +15,22 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. No account is required. Progress stays in that browser's local storage. The main assignment is at `/`; the guided lesson is at `/#practice`. `/?review=1#practice` opens the original Russian review dialog prepared for the project owner.
+Open http://127.0.0.1:5173. No account is required. Progress stays in that browser's local storage. The learning dashboard is at `/`, progress at `/#progress`, and assignments at `/#lesson/<id>`. Saved reviews have their own hash routes. The earlier connected assessment remains at `/#trial` and the guided exercise at `/#practice`; their saved data is retained separately.
 
 If browser storage is unavailable, an in-memory fallback preserves both drafts while switching exercises in the same open page. Reloading or closing that page can lose unsaved changes; the app displays a warning when durable saving fails.
 
-## Demonstrate the work trial
+## Demonstrate the learning product
+
+1. Open **Деньги, которых не было**, then **Открыть отчёт**.
+2. Change the cancelled order from $650 to $2,300. The broken SUM reports $3,680, although paid revenue is still $1,200.
+3. Identify the missing status filter and use `=SUMIF(B2:B101,"Paid",C2:C101)`. The result becomes $1,200.
+4. Check the solution against independent datasets, then answer the separate transfer question ($900).
+5. The review awards 20 points for diagnosis, up to 50 for repair and 30 for transfer. A hardcoded `=1200` fails the varied datasets.
+6. A weak result recommends the other revenue case (refunds); a successful result advances the route. Change languages or reload to verify saved drafts and results.
+
+The other cases cover weighted conversion, profit contribution versus sales volume, refunded orders, an omitted channel, and holding budget when returns do not justify spending. Completion badges require successful repair and transfer with at least 80 points; a submission alone does not count as passing. These thresholds describe this exercise, not proven skill mastery.
+
+## Earlier work trial (`/#trial`)
 
 See [DEMO.md](DEMO.md) for a two-minute demo, the scoring rules, product hypothesis and remaining submission work.
 
@@ -31,7 +42,7 @@ See [DEMO.md](DEMO.md) for a two-minute demo, the scoring rules, product hypothe
 
 The formulas are really executed. The score records performance on this exercise, not hiring readiness. The optional written handoff is saved without automated grading.
 
-## Demonstrate the guided lesson
+## Earlier guided lesson (`/#practice`)
 
 1. The initial five Paid orders total $1,200.
 2. Click **Add order**. Set its status to **Cancelled**, keeping its amount at $300.
@@ -64,7 +75,10 @@ The production build is in `dist/` and can be served by a static hosting provide
 
 ## Implementation
 
-- React + TypeScript + Vite; locally bundled DM Sans.
+- React + TypeScript + Vite; locally bundled DM Sans, no new dependencies for the rebuild.
+- `src/learning/model.ts` defines six bilingual cases, bounded saved state and error-based next-case recommendations.
+- `src/learning/engine.ts` grades diagnosis, actual formula behavior on 7–8 datasets (or the submitted decision data) and transfer. Worker calls have timeouts and stale-result protection.
+- `src/learning/LearningApp.tsx` and `Workspace.tsx` implement the curriculum, progress, three-stage lesson and review. The new layout is scoped in `src/learning/learning.css`.
 - `src/model.ts` owns training data, the independent business-rule calculation, validation and progress restoration.
 - `src/formula.ts` evaluates formulas using fast-formula-parser. The supported function set is explicit. SUMIFS and COUNTIFS are outside this version's supported set.
 - `src/simulation/model.ts` owns the connected assignment data, persistence and independent channel economics.
@@ -77,6 +91,6 @@ The production build is in `dist/` and can be served by a static hosting provide
 
 ## Current scope
 
-This release contains one connected sales operations assignment with varied data and one guided lesson. Payments, account sync and additional role-specific assignments are future work. Learning effectiveness and willingness to pay are unvalidated. A completed case demonstrates passing this exercise's checks, not universal spreadsheet correctness or job readiness. Product and proposed pricing assumptions are in DEMO.md.
+This release contains six authored lessons and two retained earlier exercises. Payments, account sync, a larger curriculum and measured learning effectiveness remain future work. There is no AI service or external data upload. All lesson companies and data are fictional. A successful case demonstrates passing its checks, not universal spreadsheet correctness or job readiness.
 
-The repository is private as created by its owner. The competition's final submission requires a public repository and a publicly accessible deployed product.
+The repository remains private. The owner has explicitly requested that the site not be published yet.

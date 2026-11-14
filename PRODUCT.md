@@ -9,19 +9,19 @@ web
 Delegated by the user to implement the accepted MVP plan. React, TypeScript and Vite. Browser formula evaluation and local progress persistence.
 
 ## Users
-Initial audience hypothesis: US adults aged 25–45 preparing for a sales operations role, interview or practical assessment. The buyer is the individual learner.
+Initial audience hypothesis: adult learners improving practical spreadsheet and business-data skills for work. The buyer is the individual learner. Russian and English are supported. Age, geography and willingness to pay remain unvalidated hypotheses.
 
 ## Product Purpose
-Rehearse a realistic work assignment before a job assessment: repair a flawed revenue report, calculate overall conversion, and defend a budget-test recommendation using evidence. Identify gaps, practice them and retry on changed data.
+Learn to spot, repair and explain misleading business reports through short work assignments, transparent feedback and a targeted next lesson. The product should teach the principle, then verify that the learner can apply it to a new situation.
 
 ## Capabilities and Constraints
-One connected sales operations assignment is available at the root route. It includes two editable formulas, linked order/channel data, three structured decision questions, 30 independent checks, a score with transparent components, submission history, worked hints, a downloadable review and fresh datasets. The existing cancelled-orders lesson remains available at #practice. Guest access and local persistence. All data is labelled fictional. English product interface. No live AI generation or subjective automated grading. Scores describe exercise performance, not job readiness or certification. Public hosting and willingness to pay remain unverified.
+The default route is a learning dashboard with six bilingual cases in three skills: revenue, conversion and decisions. Each case includes a brief, editable dataset, diagnosis, formula or decision, a transfer question, a saved review and a targeted next action. Formula solutions are executed in a worker and checked against 7–8 independent datasets. Decision solutions respond to the submitted data. The score is 20 diagnosis + 50 repair + 30 transfer. Successful repair and transfer with at least 80 points count as completing a lesson. Unsuccessful submissions remain visible without falsely increasing completion. Guest access, local persistence and an in-tab fallback are supported. All companies and data are fictional. No live AI generation, account sync or subjective automated grading. Scores describe exercise performance, not job readiness or certification. Earlier exercises remain at #trial and #practice. Publishing is explicitly on hold at the owner's request.
 
 ## Operating Context
 24-hour Zimran/AIESEC hackathon. Working product is 40% of scoring. The user explicitly delegated routine implementation decisions while away and asked to see the result on return.
 
 ## Brand Commitments
-Product name is Fix the Report. Preserve the implemented editorial workbook identity in DESIGN.md; extend it to work simulations using the same type, palette and controls.
+Product name is Fix the Report. The owner explicitly rejected the earlier interface and authorized a full rebuild. The new learning studio uses warm white, coral actions, blue-gray type and sage/sky/ochre skill illustrations. See REDESIGN.md for the new product and visual contract; DESIGN.md retains legacy styling details for the earlier routes.
 
 ## Product Principles
 - Correctness is demonstrated through user-controlled data.

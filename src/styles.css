@@ -259,6 +259,43 @@ p {
 .main {
   min-width: 0;
 }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.language-switcher {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+}
+.language-switcher button,
+.sim-header nav .language-switcher button {
+  width: auto;
+  height: auto;
+  min-width: 30px;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 5px;
+  color: inherit;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 600;
+}
+.language-switcher button[aria-pressed="true"],
+.sim-header nav .language-switcher button[aria-pressed="true"] {
+  color: #fff;
+  background: #5140b7;
+}
+.sim-header nav .language-switcher {
+  color: #f1f0fc;
+  border-color: #a6a0c6;
+}
 .topbar {
   height: 76px;
   padding: 0 42px;
@@ -1436,6 +1473,15 @@ tbody td:last-child {
   }
   .workspace-bottom p {
     font-size: 10px;
+  }
+}
+@media (max-width: 520px) {
+  .topbar {
+    min-height: 57px;
+    height: auto;
+    flex-wrap: wrap;
+    padding-block: 8px;
+    gap: 6px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
