@@ -66,6 +66,7 @@ const hintCopy = {
 };
 
 function downloadReview(state: TrialState, result: Submission) {
+  const snapshot = result.snapshot;
   const text = [
     "# Fix the Report — Work trial review",
     "",
@@ -75,7 +76,7 @@ function downloadReview(state: TrialState, result: Submission) {
     `Score: ${result.score}/100`,
     `Submitted: ${result.at}`,
     `Attempts: ${state.submissions.length}`,
-    `Hints used: ${state.hints.length}`,
+    `Hints used: ${snapshot ? snapshot.hints.length : "Not recorded in this older review"}`,
     "",
     ...result.skills.flatMap((skill) => [
       `## ${skill.name}: ${skill.score}/${skill.maximum}`,
@@ -85,12 +86,25 @@ function downloadReview(state: TrialState, result: Submission) {
       ),
       "",
     ]),
-    "## Submitted formulas",
-    `Revenue: ${state.answers.revenue}`,
-    `Conversion: ${state.answers.conversion}`,
-    "",
-    "## Personal handoff note (not graded)",
-    state.answers.note || "No note added.",
+    ...(snapshot
+      ? [
+          "## Submitted formulas",
+          `Revenue: ${snapshot.answers.revenue}`,
+          `Conversion: ${snapshot.answers.conversion}`,
+          "",
+          "## Personal handoff note (not graded)",
+          snapshot.answers.note || "No note added.",
+          "",
+          "## Source data at submission",
+          `Assignment: ${snapshot.scenario.seed + 1}`,
+          "",
+          "```json",
+          JSON.stringify(snapshot.scenario, null, 2),
+          "```",
+        ]
+      : [
+          "The formulas, source data and handoff note were not recorded in this older review. Submit again to save a complete snapshot.",
+        ]),
   ].join("\n");
   const url = URL.createObjectURL(
     new Blob([text], { type: "text/markdown;charset=utf-8" }),
@@ -234,6 +248,7 @@ export function Simulation() {
         seconds,
         controller.signal,
       );
+      if (result.snapshot) result.snapshot.hints = [...state.hints];
       setState((s) => ({
         ...s,
         stage: "result",
@@ -1045,8 +1060,9 @@ export function Simulation() {
                     : "submissions"}
                 </span>
                 <span>
-                  {state.hints.length} worked{" "}
-                  {state.hints.length === 1 ? "hint" : "hints"} opened
+                  {latest.snapshot
+                    ? `${latest.snapshot.hints.length} worked ${latest.snapshot.hints.length === 1 ? "hint" : "hints"} opened`
+                    : "Hints not recorded in this older review"}
                 </span>
                 {state.submissions.length > 1 && (
                   <span>

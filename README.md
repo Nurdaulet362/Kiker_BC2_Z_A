@@ -47,6 +47,15 @@ npm run preview
 
 Browser tests use an installed Google Chrome. Unit tests cover calculation, alternative valid formulas, invalid input, hardcoded answers, linked channel metrics, changing recommendations and persistence. Browser tests cover both complete learner flows, failed submissions, repair, reload, download, fresh assignments, hints, mobile width, reset and navigation.
 
+For the latest checks and limitations, see [QA_REPORT.md](QA_REPORT.md). To test a running production preview instead of the development server:
+
+```sh
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run test:e2e -- --workers=1
+node scripts/qa-smoke.mjs
+```
+
+The smoke script captures seven states at 375, 768 and 1440 px and checks page overflow, console errors and failed requests. Evidence stays in the ignored `.impeccable/review/ecc-qa/` directory. It does not claim visual regression coverage without an approved baseline.
+
 The production build is in `dist/` and can be served by a static hosting provider. `vite preview` is a local preview server.
 
 ## Implementation
@@ -56,6 +65,7 @@ The production build is in `dist/` and can be served by a static hosting provide
 - `src/formula.ts` evaluates formulas using fast-formula-parser. The supported function set is explicit. SUMIFS and COUNTIFS are outside this version's supported set.
 - `src/simulation/model.ts` owns the connected assignment data, persistence and independent channel economics.
 - `src/simulation/evaluate.ts` computes the 30 checks and transparent weighted score.
+- New submissions preserve their own source data, formulas, handoff note and hint use. Editing a draft does not rewrite the saved review; older reviews without a snapshot remain readable and identify missing details.
 - Formula evaluation runs in Web Workers with timeouts; input is limited to A1:C101 for revenue and A1:D101 for conversion, with at most 100 data rows. Arbitrary JavaScript evaluation is never used.
 - Revenue verification covers 19 datasets. Conversion verification covers 8 datasets, including zero leads (`N/A`), zero paid orders, unequal audiences and a new channel on row 101.
 - Monetary totals are compared within half a cent; expected revenue is summed in integer cents.

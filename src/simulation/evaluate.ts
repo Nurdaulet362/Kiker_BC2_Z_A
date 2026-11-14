@@ -216,5 +216,10 @@ export function assess(
     skills,
     at: new Date().toISOString(),
     seconds,
+    snapshot: {
+      scenario: structuredClone(scenario),
+      answers: { ...answers },
+      hints: [],
+    },
   };
 }

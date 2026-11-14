@@ -37,6 +37,8 @@ export type Submission = {
   skills: SkillResult[];
   at: string;
   seconds: number;
+  // Optional only for reviews saved before submission snapshots were introduced.
+  snapshot?: { scenario: Scenario; answers: Answers; hints: string[] };
 };
 export type TrialState = {
   version: 1;
@@ -188,6 +190,62 @@ export const rate = (value: number | "N/A" | null | undefined) =>
       ? "—"
       : `${(value * 100).toFixed(2)}%`;
 
+function validSavedScenario(scenario: Scenario | undefined): boolean {
+  return (
+    !!scenario &&
+    Number.isInteger(scenario.seed) &&
+    scenario.seed >= 0 &&
+    scenario.seed <= 1_000_000 &&
+    Array.isArray(scenario.orders) &&
+    scenario.orders.length <= 100 &&
+    scenario.orders.every(
+      (o) =>
+        o &&
+        typeof o.id === "string" &&
+        o.id.length < 60 &&
+        CHANNELS.includes(o.channel) &&
+        ["Paid", "Cancelled", "Pending"].includes(o.status) &&
+        typeof o.amount === "string" &&
+        o.amount.length <= 30,
+    ) &&
+    new Set(scenario.orders.map((o) => o.id)).size === scenario.orders.length &&
+    Array.isArray(scenario.channels) &&
+    scenario.channels.length === 2 &&
+    scenario.channels.every(
+      (c, i) =>
+        c &&
+        c.name === CHANNELS[i] &&
+        typeof c.leads === "string" &&
+        c.leads.length <= 30 &&
+        typeof c.spend === "string" &&
+        c.spend.length <= 30,
+    )
+  );
+}
+
+function validSavedAnswers(a: Answers | undefined): boolean {
+  return (
+    !!a &&
+    typeof a.revenue === "string" &&
+    a.revenue.length <= 1000 &&
+    typeof a.conversion === "string" &&
+    a.conversion.length <= 1000 &&
+    typeof a.note === "string" &&
+    a.note.length <= 1200 &&
+    ["", "Email", "Ads", "Neither"].includes(a.channel) &&
+    ["", "contribution", "volume", "conversion"].includes(a.evidence) &&
+    ["", "guaranteed", "limited", "none"].includes(a.limitation)
+  );
+}
+
+function validSavedHints(hints: string[] | undefined): boolean {
+  return (
+    Array.isArray(hints) &&
+    hints.length <= 3 &&
+    hints.every((h) => ["revenue", "conversion", "judgment"].includes(h))
+  );
+}
+
 export function restoreTrial(raw: string | null): TrialState {
   try {
     if (!raw) return initialTrial();
@@ -198,63 +256,10 @@ export function restoreTrial(raw: string | null): TrialState {
       !["revenue", "conversion", "judgment"].includes(s.active)
     )
       return initialTrial();
-    if (
-      !s.scenario ||
-      !Number.isInteger(s.scenario.seed) ||
-      s.scenario.seed < 0 ||
-      s.scenario.seed > 1_000_000 ||
-      !Array.isArray(s.scenario.orders) ||
-      s.scenario.orders.length > 100 ||
-      !s.scenario.orders.every(
-        (o) =>
-          o &&
-          typeof o.id === "string" &&
-          o.id.length < 60 &&
-          CHANNELS.includes(o.channel) &&
-          ["Paid", "Cancelled", "Pending"].includes(o.status) &&
-          typeof o.amount === "string" &&
-          o.amount.length <= 30,
-      )
-    )
+    if (!validSavedScenario(s.scenario) || !validSavedAnswers(s.answers))
       return initialTrial();
     if (
-      !Array.isArray(s.scenario.channels) ||
-      s.scenario.channels.length !== 2 ||
-      !s.scenario.channels.every(
-        (c, i) =>
-          c.name === CHANNELS[i] &&
-          typeof c.leads === "string" &&
-          c.leads.length <= 30 &&
-          typeof c.spend === "string" &&
-          c.spend.length <= 30,
-      )
-    )
-      return initialTrial();
-    if (
-      new Set(s.scenario.orders.map((o) => o.id)).size !==
-      s.scenario.orders.length
-    )
-      return initialTrial();
-    const a = s.answers;
-    if (
-      !a ||
-      typeof a.revenue !== "string" ||
-      a.revenue.length > 1000 ||
-      typeof a.conversion !== "string" ||
-      a.conversion.length > 1000 ||
-      typeof a.note !== "string" ||
-      a.note.length > 1200 ||
-      !["", "Email", "Ads", "Neither"].includes(a.channel) ||
-      !["", "contribution", "volume", "conversion"].includes(a.evidence) ||
-      !["", "guaranteed", "limited", "none"].includes(a.limitation)
-    )
-      return initialTrial();
-    if (
-      !Array.isArray(s.hints) ||
-      s.hints.length > 3 ||
-      !s.hints.every((h) =>
-        ["revenue", "conversion", "judgment"].includes(h),
-      ) ||
+      !validSavedHints(s.hints) ||
       !Array.isArray(s.submissions) ||
       s.submissions.length > 50
     )
@@ -268,6 +273,12 @@ export function restoreTrial(raw: string | null): TrialState {
           r.score <= 100 &&
           Number.isFinite(r.seconds) &&
           typeof r.at === "string" &&
+          (r.snapshot === undefined ||
+            (r.snapshot &&
+              validSavedScenario(r.snapshot.scenario) &&
+              validSavedAnswers(r.snapshot.answers) &&
+              validSavedHints(r.snapshot.hints) &&
+              validateScenario(r.snapshot.scenario) === null)) &&
           Array.isArray(r.skills) &&
           r.skills.length === 3 &&
           r.skills.every(

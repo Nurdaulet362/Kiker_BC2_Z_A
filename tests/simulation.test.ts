@@ -124,7 +124,35 @@ describe("sales operations work trial", () => {
       "{oops",
       JSON.stringify({ ...state, answers: null }),
       JSON.stringify({ ...state, submissions: [{}] }),
+      JSON.stringify({
+        ...state,
+        submissions: [{ ...state.submissions[0], snapshot: {} }],
+      }),
     ])
       expect(restoreTrial(raw)).toEqual(initialTrial());
+  });
+  it("keeps submitted formulas and source data independent of later draft edits", () => {
+    const state = initialTrial();
+    const answers = { ...correct };
+    const result = assess(state.scenario, answers, 30);
+    answers.revenue = "=0";
+    answers.note = "Changed after submission";
+    state.scenario.orders[0].amount = "0";
+    state.scenario.channels[0].spend = "9999";
+    expect(result.snapshot?.answers).toEqual(correct);
+    expect(result.snapshot?.scenario.orders[0].amount).toBe("240.00");
+    expect(result.snapshot?.scenario.channels[0].spend).toBe("200.00");
+  });
+  it("retains earlier reviews without inventing a missing submission snapshot", () => {
+    const state = initialTrial();
+    state.startedAt = new Date().toISOString();
+    state.stage = "result";
+    const result = assess(state.scenario, correct, 30);
+    delete result.snapshot;
+    state.submissions = [result];
+    const restored = restoreTrial(JSON.stringify(state));
+    expect(restored.stage).toBe("result");
+    expect(restored.submissions[0].score).toBe(100);
+    expect(restored.submissions[0].snapshot).toBeUndefined();
   });
 });
