@@ -8,7 +8,7 @@ import {
   type FormulaIssue,
 } from "../src/formula-errors";
 
-const codes: FormulaErrorCode[] = ["syntax", "range", "function", "result", "length", "prefix", "timeout", "start"];
+const codes: FormulaErrorCode[] = ["syntax", "range", "function", "result", "length", "prefix", "timeout", "start", "arguments", "shape"];
 
 describe("structured formula errors", () => {
   it.each(codes)("provides English and Russian text for %s independently of the English source message", code => {
