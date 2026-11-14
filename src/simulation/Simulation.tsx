@@ -319,7 +319,7 @@ export function Simulation() {
         </button>
         <nav aria-label={t("Main navigation")}>
           <span className="sim-current-nav">{t("Work simulations")}</span>
-          <a href="#practice">{t("Guided practice")}</a>
+          <a href="#lesson/revenue-cancelled">{t("Guided practice")}</a>
           <button
             onClick={() => setDialog("help")}
             aria-label={t("About this work trial")}
@@ -484,7 +484,7 @@ export function Simulation() {
                   )}{" "}
                 </p>
               </div>
-              <a className="secondary-button" href="#practice">
+              <a className="secondary-button" href="#lesson/revenue-cancelled">
                 {t("Try guided practice")} <ArrowRight size={16} />
               </a>
             </section>
@@ -517,7 +517,7 @@ export function Simulation() {
                     <LocalizedText
                       message="Everything runs in this browser. Basic spreadsheet familiarity helps; worked hints are available if you get stuck. For a shorter introduction, try the <practice>guided cancelled-order lesson</practice>."
                       tags={{
-                        practice: (label) => <a href="#practice">{label}</a>,
+                        practice: (label) => <a href="#lesson/revenue-cancelled">{label}</a>,
                       }}
                     />
                   </p>

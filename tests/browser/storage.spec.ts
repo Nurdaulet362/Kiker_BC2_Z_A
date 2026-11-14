@@ -73,7 +73,7 @@ test("the last input survives an immediate reload before the debounce expires", 
   await expect(page.getByRole("textbox", { name: "Ваша формула", exact: true })).toHaveValue("=123.45");
 });
 
-for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#trial", "fix-the-report.work-trial.v1"], ["/#practice", "fix-the-report.cancelled-orders.v1"]]) {
+for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#trial", "fix-the-report.work-trial.v1"]]) {
   test(`future-version data stays untouched on ${route}`, async ({ page }) => {
     const future = '{"version":99,"futureData":"must remain byte-for-byte"}';
     await page.addInitScript(({ storageKey, future, language }) => {
@@ -90,8 +90,6 @@ for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#tria
     } else if (route.includes("trial")) {
       await page.getByRole("button", { name: "Start the work trial", exact: true }).click();
       await page.getByLabel("Paid revenue formula").fill("=42");
-    } else {
-      await page.getByRole("button", { name: "Add order", exact: true }).click();
     }
     await page.getByRole("button", { name: "Русский", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: FUTURE_VERSION_WARNING.ru })).toBeVisible();
@@ -104,6 +102,30 @@ for (const [route, storageKey] of [["/#lesson/revenue-cancelled", key], ["/#tria
     expect(await page.evaluate(k => localStorage.getItem(k), storageKey)).toBe(future);
   });
 }
+
+test("redirecting old practice preserves its future-version bytes and backups without reading them as active data", async ({ page }) => {
+  const storageKey = "fix-the-report.cancelled-orders.v1";
+  const preserved = {
+    [storageKey]: '{"version":99,"futureData":"must remain byte-for-byte"}',
+    [`${storageKey}.backup`]: "older backup: keep exact bytes\n",
+    [`${storageKey}.backup.prev`]: "previous backup: keep exact bytes\n",
+  };
+  await page.addInitScript(preserved => {
+    if (localStorage.getItem("old-practice-future-fixture")) return;
+    for (const [name, value] of Object.entries(preserved)) localStorage.setItem(name, value);
+    localStorage.setItem("old-practice-future-fixture", "set");
+  }, preserved);
+  await page.goto("/#practice");
+  await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
+  await page.getByRole("button", { name: "Open the report", exact: true }).click();
+  await page.getByRole("textbox", { name: "Your formula", exact: true }).fill("=42");
+  await page.getByRole("button", { name: "Русский", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: FUTURE_VERSION_WARNING.ru })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("textbox", { name: "Ваша формула", exact: true })).toHaveValue("=42");
+  await expect(page.getByRole("status").filter({ hasText: FUTURE_VERSION_WARNING.ru })).toHaveCount(0);
+  expect(await page.evaluate(keys => Object.fromEntries(keys.map(name => [name, localStorage.getItem(name)])), Object.keys(preserved))).toEqual(preserved);
+});
 
 test("invalid saved results are removed from active history only after backing up the original bytes", async ({ page }) => {
   const result = { id: "kept-review", lessonId: "revenue-cancelled", score: 100, diagnosisPassed: true, repairPassed: true, transferPassed: true, hintLevel: 0, solutionRevealed: false, checks: [], at: "2026-11-14T10:00:00.000Z" };

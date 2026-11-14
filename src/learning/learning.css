@@ -105,6 +105,12 @@
 .learn-section-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 19px; }
 .learn-section-title > span { color: #5e656f; font-size: 10px; }
 .learn-curriculum { margin-top: 31px; }
+.learn-work-trial { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-top: 20px; padding: 16px 18px; background: white; border: 1px solid var(--learn-line); border-radius: 10px; }
+.learn-work-trial > div { flex: 1 1 220px; min-width: 0; }
+.learn-work-trial strong { font-size: 12px; font-weight: 600; }
+.learn-work-trial p { margin-top: 4px; color: var(--learn-muted); font-size: 11px; }
+.learn-work-trial a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; color: #435b60; font-size: 12px; font-weight: 500; text-underline-offset: 4px; }
+.learn-work-trial a:hover { color: #a64330; }
 .learn-filter { display: flex; gap: 5px; border-bottom: 1px solid var(--learn-line); margin-bottom: 20px; padding-bottom: 12px; flex-wrap: wrap; }
 .learn-filter button { background: transparent; color: #5d666e; font-size: 10px; padding: 7px 10px; min-height: 32px; border-radius: 6px; }
 .learn-filter button:hover { background: #eef0f2; }

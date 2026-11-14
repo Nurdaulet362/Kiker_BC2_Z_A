@@ -91,7 +91,7 @@ test("work trial: diagnose, repair, explain, persist, download and solve a new a
   expect(errors).toEqual([]);
 });
 
-test("mobile: errors, source changes, hints, restore, and guided lesson navigation", async ({
+test("mobile: errors, source changes, hints, restore, and first lesson navigation", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -136,10 +136,13 @@ test("mobile: errors, source changes, hints, restore, and guided lesson navigati
   await page
     .getByRole("link", { name: "Guided practice", exact: true })
     .click();
+  await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
   await expect(
-    page.getByRole("heading", { name: "The revenue that wasn’t." }),
+    page.getByRole("heading", { name: "The money that never arrived", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Back to work simulations" }).click();
+  await page.getByRole("main").getByRole("button", { name: "My learning", exact: true }).click();
+  await page.getByRole("link", { name: "Work Trial", exact: true }).click();
+  await expect(page).toHaveURL(/#trial$/);
   await expect(page.getByLabel("Ad spend for Ads")).toHaveValue("50");
   await page.getByRole("button", { name: "Restore source data" }).click();
   await page.getByRole("button", { name: "Keep my edits" }).click();

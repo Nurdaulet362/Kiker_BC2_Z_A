@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
-test("Russian follows the active assignment, saved review and guided lesson", async ({
+test("Russian follows the active assignment, saved review and first learning lesson", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
@@ -56,13 +56,17 @@ test("Russian follows the active assignment, saved review and guided lesson", as
   await page
     .getByRole("link", { name: "Тренировка с подсказками", exact: true })
     .click();
+  await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
   await expect(
-    page.getByRole("heading", { name: "Выручка, которой не было" }),
+    page.getByRole("heading", { name: "Деньги, которых не было", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Добавить заказ" }).click();
-  await page.getByLabel("Статус заказа ORD-1046").selectOption("Cancelled");
-  await page.getByRole("button", { name: "Проверить отчёт" }).click();
-  await expect(page.getByText("Ошибка найдена", { exact: true })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+  await page.getByRole("button", { name: "Открыть отчёт", exact: true }).click();
+  await page.getByLabel("Сумма, $, строка 4", { exact: true }).fill("2300");
+  await expect(page.locator(".lr-output strong")).toHaveText(/3\s?680/);
+  await page.reload();
+  await expect(page.getByLabel("Сумма, $, строка 4", { exact: true })).toHaveValue("2300");
+  await expect(page.locator("html")).toHaveAttribute("lang", "ru");
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(375);

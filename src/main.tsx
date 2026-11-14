@@ -4,7 +4,6 @@ import "@fontsource/dm-sans/400.css";
 import "@fontsource/dm-sans/500.css";
 import "@fontsource/dm-sans/600.css";
 import "@fontsource/dm-sans/700.css";
-import { App } from "./App";
 import { Simulation } from "./simulation/Simulation";
 import { LearningApp } from "./learning/LearningApp";
 import {
@@ -43,13 +42,21 @@ function Root() {
     }
   }, [language]);
   React.useEffect(() => {
-    const update = () => setHash(location.hash);
+    const update = () => {
+      if (location.hash === "#practice") {
+        // Replace the obsolete entry and notify both hash-based routers.
+        location.replace("#lesson/revenue-cancelled");
+        return;
+      }
+      setHash(location.hash);
+    };
     addEventListener("hashchange", update);
+    update();
     return () => removeEventListener("hashchange", update);
   }, []);
   return (
     <LanguageContext.Provider value={{ language, setLanguage }}>
-      {hash === "#practice" ? <App /> : hash === "#trial" ? <Simulation /> : <LearningApp />}
+      {hash === "#practice" ? null : hash === "#trial" ? <Simulation /> : <LearningApp />}
     </LanguageContext.Provider>
   );
 }

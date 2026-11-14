@@ -130,7 +130,7 @@ test("unavailable browser storage warns clearly and leaves the trial usable", as
   ).toBeVisible();
 });
 
-test("both exercise drafts survive route changes when browser storage is blocked", async ({
+test("lesson and work-trial drafts survive route changes when browser storage is blocked", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -141,29 +141,24 @@ test("both exercise drafts survive route changes when browser storage is blocked
   await page.goto("/#trial");
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await page.getByLabel("Paid revenue formula").fill(revenue);
-  await page
-    .getByRole("link", { name: "Guided practice", exact: true })
-    .click();
-  await expect(
-    page.getByText(/Your browser cannot save progress/),
-  ).toBeVisible();
-  await page.getByLabel("Amount for ORD-1041").fill("321.45");
-  await page.getByLabel("Status for ORD-1041").selectOption("Cancelled");
+  await page.getByRole("link", { name: "Guided practice", exact: true }).click();
+  await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
+  await expect(page.getByText(/Browser storage is unavailable/)).toBeVisible();
+  await page.getByRole("button", { name: "Open the report", exact: true }).click();
+  await page.getByLabel("Amount, $, row 2", { exact: true }).fill("321.45");
+  await page.getByRole("textbox", { name: "Your formula", exact: true }).fill(revenue);
+  await page.getByRole("radio", { name: "Order status is ignored", exact: true }).check();
 
-  await page.getByRole("link", { name: "Back to work simulations" }).click();
+  await page.getByRole("main").getByRole("button", { name: "My learning", exact: true }).click();
+  await page.getByRole("link", { name: "Work Trial", exact: true }).click();
   await expect(page.getByLabel("Paid revenue formula")).toHaveValue(revenue);
-  await expect(
-    page.getByText(/Your browser cannot save this session/),
-  ).toBeVisible();
+  await expect(page.getByText(/Your browser cannot save this session/)).toBeVisible();
 
-  await page
-    .getByRole("link", { name: "Guided practice", exact: true })
-    .click();
-  await expect(page.getByLabel("Amount for ORD-1041")).toHaveValue("321.45");
-  await expect(page.getByLabel("Status for ORD-1041")).toHaveValue("Cancelled");
-  await expect(
-    page.getByText(/Your browser cannot save progress/),
-  ).toBeVisible();
+  await page.getByRole("link", { name: "Guided practice", exact: true }).click();
+  await expect(page.getByLabel("Amount, $, row 2", { exact: true })).toHaveValue("321.45");
+  await expect(page.getByRole("textbox", { name: "Your formula", exact: true })).toHaveValue(revenue);
+  await expect(page.getByRole("radio", { name: "Order status is ignored", exact: true })).toBeChecked();
+  await expect(page.getByText(/Browser storage is unavailable/)).toBeVisible();
 });
 
 test("the complete work trial can be submitted using only the keyboard", async ({
@@ -206,15 +201,17 @@ test("the complete work trial can be submitted using only the keyboard", async (
   await expect(page.locator(".sim-score strong")).toHaveText("100");
 });
 
-test("guided practice sidebar content remains reachable in a short desktop window", async ({
+test("the redirected lesson sidebar remains reachable in a short desktop window", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1152, height: 630 });
   await page.goto("/#practice");
-  const footer = page.getByText("Guest session · saved locally");
-  await footer.scrollIntoViewIfNeeded();
+  await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
+  const footer = page.getByText("Progress saved on this device", { exact: true });
+  // Reach the final item through the sidebar's own scroll area.
+  await page.locator(".learn-sidebar").evaluate(element => { element.scrollTop = element.scrollHeight; });
   await expect(footer).toBeInViewport();
-  const bounds = await page.locator(".sidebar").boundingBox();
+  const bounds = await page.locator(".learn-sidebar").boundingBox();
   const text = await footer.boundingBox();
   expect(text!.y + text!.height).toBeLessThanOrEqual(
     bounds!.y + bounds!.height,

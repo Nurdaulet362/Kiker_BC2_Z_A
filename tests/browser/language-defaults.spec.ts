@@ -36,6 +36,10 @@ for (const route of routes) {
     await page.goto(route);
     expect(await page.evaluate(() => navigator.language)).toBe("ru-RU");
     await expectLanguage(page, "en");
+    if (route === "/#practice") {
+      await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
+      await expect(page.getByRole("heading", { name: "The money that never arrived", exact: true })).toBeVisible();
+    }
     if (route === "/") {
       await expect(page.getByRole("heading", { name: headlines.en, exact: true })).toBeVisible();
       await expect(page.getByText(descriptions.en, { exact: true })).toBeVisible();
@@ -83,6 +87,7 @@ for (const saved of ["ru", "en", "invalid"]) {
     for (const route of routes) {
       await page.goto(route);
       await expectLanguage(page, expected);
+      if (route === "/#practice") await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
     }
     await expect.poll(() => page.evaluate(key => localStorage.getItem(key), languageKey)).toBe(expected);
   });
@@ -99,6 +104,10 @@ test("blocked storage keeps the English default and allows switching within the 
   await expectLanguage(page, "ru");
   await page.evaluate(() => { location.hash = "#progress"; });
   await expectLanguage(page, "ru");
+  await page.evaluate(() => { location.hash = "#practice"; });
+  await expect(page).toHaveURL(/#lesson\/revenue-cancelled$/);
+  await expectLanguage(page, "ru");
+  await expect(page.getByRole("heading", { name: "Деньги, которых не было", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "English", exact: true }).click();
   await expectLanguage(page, "en");
   await page.reload();
