@@ -24,7 +24,7 @@
 - `CODEX_SPRINT.md` — поручение 2b, порядок и заморозка кода.
 - `docs/SPRINT_TASK_2B_REPORT.md` — этот отчёт.
 
-Внешняя копия `/Users/nurdauletkystaubaj/Desktop/CODEX_SPRINT.md` синхронизирована, но в Git не входит. Пользовательские ZIP/PNG, `skills/` и ранее существовавшие незакоммиченные `CONTEXT.md` / `docs/CASE_CONTEXT.md` не изменялись и в коммит задачи не включены.
+Внешняя копия `~/Desktop/CODEX_SPRINT.md` синхронизирована, но в Git не входит. Пользовательские ZIP/PNG, `skills/` и ранее существовавшие незакоммиченные `CONTEXT.md` / `docs/CASE_CONTEXT.md` не изменялись и в коммит задачи не включены.
 
 ## 3. Команды и результаты
 
@@ -38,7 +38,7 @@
 | `PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run test:e2e -- tests/browser/review.spec.ts --output=/tmp/ftr-task2b-tests` | exit 0; **9/9**, 6,4 с |
 | `PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run test:e2e` | exit 0; **61/61 Chromium**, 23,3 с |
 | `git diff --check` | exit 0 |
-| `cmp CODEX_SPRINT.md /Users/nurdauletkystaubaj/Desktop/CODEX_SPRINT.md` | exit 0 |
+| `cmp CODEX_SPRINT.md ~/Desktop/CODEX_SPRINT.md` | exit 0 |
 
 Основной JS: **416,25 kB**, gzip **128,74 kB**. CSS: **88,78 kB**, gzip **18,21 kB**. Новых зависимостей нет. После сборки менялась только документация.
 

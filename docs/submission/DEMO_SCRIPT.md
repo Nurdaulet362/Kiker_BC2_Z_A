@@ -59,7 +59,7 @@ Say: «Число 1200 верно только для исходного отч�
 
 ## Screenshot fallback references
 
-All paths below are repository-relative. These captures were made on 14 November 2026 from real UI interactions with frozen code, without result fixtures or DOM-content edits. They are prepared examples, not user-study results. The narrow viewport is desktop Chromium emulation, not a physical phone. Details: [VISUAL_CHECK.md](../../.impeccable/review/submission/VISUAL_CHECK.md).
+All paths below are local, ignored artifacts relative to the project root; they are not included in Git. These captures were made on 14 November 2026 from real UI interactions with frozen code, without result fixtures or DOM-content edits. They are prepared examples, not user-study results. The narrow viewport is desktop Chromium emulation, not a physical phone. Internal capture notes: `.impeccable/review/submission/VISUAL_CHECK.md`. The committed [offline recording](Fix-the-Report-Demo.webm) provides the shared fallback; its verification is in [RELEASE_CHECK.md](RELEASE_CHECK.md).
 
 | State | File | Truthful caption |
 | --- | --- | --- |
@@ -81,4 +81,4 @@ All paths below are repository-relative. These captures were made on 14 November
 - [SPRINT_SUMMARY.md](../SPRINT_SUMMARY.md), [SPRINT_TASK_4_REPORT.md](../SPRINT_TASK_4_REPORT.md): historical final verification, not a new test run.
 - [RELEASE_CHECK.md](RELEASE_CHECK.md): separate fresh clean-clone verification during submission preparation; 242 unit and 72 Chromium tests passed in each mode.
 
-Earlier [DEMO.md](../../DEMO.md) and parts of [CASE_CONTEXT.md](../CASE_CONTEXT.md) describe older route/pricing states. This script uses the later access implementation and sprint report where those sources disagree.
+The [product demo overview](../../DEMO.md) describes the frozen sprint. Parts of [CASE_CONTEXT.md](../CASE_CONTEXT.md) retain the earlier route/pricing context; the current access implementation and final sprint reports take precedence for those details.

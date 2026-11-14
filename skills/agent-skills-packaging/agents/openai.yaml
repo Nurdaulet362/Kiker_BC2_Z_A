@@ -1,4 +1,0 @@
-interface:
-  display_name: "Agent Skills Packaging"
-  short_description: "Package repository knowledge into portable skills"
-  default_prompt: "Use $agent-skills-packaging to turn the selected repository guidance into a scoped, validated skill."

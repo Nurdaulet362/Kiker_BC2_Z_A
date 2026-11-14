@@ -102,7 +102,7 @@ Source: [learning/model.ts — recommendLesson](../../src/learning/model.ts), [a
 
 **EN:** The pricing screen tests a freemium hypothesis. Free includes three foundation lessons and repeats. Proposed Pro is $19 per month for three practice-level lessons and Work Trial. The price is not validated, and we have no customer revenue to report. We need evidence that learners value continued practice enough to subscribe.
 
-**RU:** Актуальная цена — $19/month. Старое предложение «пакет за $19» в DEMO.md не является текущим тарифом.
+**RU:** Актуальная цена — $19/month. Прежнее предложение «пакет за $19» больше не является текущим тарифом.
 
 Source: [Pricing.tsx](../../src/pricing/Pricing.tsx), [BUILD_MODES.md](../BUILD_MODES.md).
 

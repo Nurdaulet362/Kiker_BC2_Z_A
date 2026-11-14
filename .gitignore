@@ -5,7 +5,13 @@ dist-demo/
 *.tsbuildinfo
 playwright-report/
 test-results/
-.impeccable/review/
-.impeccable/questions/
+/.impeccable/
 .DS_Store
 .env*
+
+# Local development references excluded from the public source tree.
+/skills/
+/SKILLS.md
+/CODEX_TASKS.md
+/QA_REPORT.md
+/CODEX_SPRINT.md

@@ -2,7 +2,7 @@
 
 Submission copy, 14 November 2026. Exactly ten slides. On-slide text is English; speaker notes are Russian. The frozen application is documented at commit `01302ea`. This file does not authorize publication.
 
-Rendering guidance: render only each slide's **On-slide copy** and its caption. Keep the Russian notes and source notes outside the audience-facing slide. Screenshot paths are repository-relative references, not public URLs. Submission captures were made from the frozen application on 14 November 2026 through real UI interactions, with no result fixtures or DOM-content edits; see [VISUAL_CHECK.md](../../.impeccable/review/submission/VISUAL_CHECK.md). They are prepared examples, not customer results or a physical phone test.
+Rendering guidance: render only each slide's **On-slide copy** and its caption. Keep the Russian notes and source notes outside the audience-facing slide. Screenshot paths refer to local, ignored artifacts relative to the project root; they are not included in Git. Submission captures were made from the frozen application on 14 November 2026 through real UI interactions, with no result fixtures or DOM-content edits; internal capture notes are in `.impeccable/review/submission/VISUAL_CHECK.md`. They are prepared examples, not customer results or a physical phone test. The committed [pitch PDF](Fix-the-Report-Pitch.pdf) contains the selected visuals.
 
 ## Slide 01 — Fix the Report
 

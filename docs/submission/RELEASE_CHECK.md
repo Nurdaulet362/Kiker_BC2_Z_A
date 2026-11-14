@@ -45,9 +45,9 @@ The existing GitHub main branch is not the frozen application version: remote ma
 
 The local browser walkthrough covers Chromium desktop and an emulated 375px viewport. A physical phone, public deployment, Firefox/WebKit and public repository access remain unchecked. Publication is not authorized by this report.
 
-Privacy preparation remains outstanding: author emails are present in Git history and personal local paths remain in historical documentation. The audit found no confirmed credentials but does not clear those personal details for publication. Historical .impeccable design files are tracked; it is inaccurate to say the whole directory was never in Git. No history rewrite was performed.
+Privacy preparation remains outstanding: author emails are present in Git history and personal local paths remain in historical documentation. The audit found no confirmed credentials but does not clear those personal details for publication. Historical `.impeccable/` design files were tracked at verification time; it is inaccurate to say the whole directory was never in Git. No history rewrite was performed.
 
-Untracked source ZIP and five reference PNGs were moved from the project root into the ignored .impeccable/review/source-inputs directory. SHA-256 hashes were checked before and after the move; no files were deleted. CODEX_SPRINT.md remains in place to preserve existing document links. Moving or excluding it from a public export is separate from this frozen-code verification.
+Untracked source ZIP and five reference PNGs were moved from the project root into the ignored `.impeccable/review/source-inputs/` directory. SHA-256 hashes were checked before and after the move; no files were deleted. At verification time, `CODEX_SPRINT.md` remained tracked to preserve existing document links. The owner's later cleanup instruction excludes internal materials from Git while preserving local copies; references to those materials are now labelled local/internal. This cleanup does not remove earlier history or rerun frozen-code verification.
 
 Root LICENSE and NOTICE are still absent. Skills and their existing attribution files were not modified.
 
