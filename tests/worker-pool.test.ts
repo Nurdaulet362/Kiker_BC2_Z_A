@@ -62,23 +62,105 @@ describe("persistent worker pool", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("rejects all outstanding requests on timeout and lazily restarts with fresh IDs", async () => {
+  it("times out only a hung preview and replays the queued assessment on a fresh worker", async () => {
     const { pool, workers, factory } = setup();
-    const first = pool.request({}).catch(error => error);
+    const preview = pool.request({ type: "preview" }).catch(error => error);
     await vi.advanceTimersByTimeAsync(50);
-    const second = pool.request({}).catch(error => error);
+    const assess = pool.request<string>({ type: "grade" });
     const previousId = workers[0].messages[1].id;
     await vi.advanceTimersByTimeAsync(50);
-    expect(await first).toMatchObject({ code: "timeout" });
-    expect(await second).toMatchObject({ code: "timeout" });
+    expect(await preview).toMatchObject({ code: "timeout" });
     expect(workers[0].terminate).toHaveBeenCalledTimes(1);
-    expect(factory).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(workers[1].messages).toEqual([{ id: previousId, type: "grade" }]);
+    workers[1].reply({ id: previousId, result: "graded" });
+    await expect(assess).resolves.toBe("graded");
     expect(vi.getTimerCount()).toBe(0);
     const next = pool.request<string>({});
     expect(factory).toHaveBeenCalledTimes(2);
-    expect(workers[1].messages[0].id).toBeGreaterThan(previousId);
-    workers[1].reply({ id: workers[1].messages[0].id, result: "restarted" });
-    await expect(next).resolves.toBe("restarted");
+    expect(workers[1].messages[1].id).toBeGreaterThan(previousId);
+    workers[1].reply({ id: workers[1].messages[1].id, result: "still reusable" });
+    await expect(next).resolves.toBe("still reusable");
+  });
+
+  it("keeps watching an aborted hung preview so a subsequent correct request succeeds", async () => {
+    const { pool, workers } = setup();
+    const controller = new AbortController();
+    const hung = pool.request({ type: "preview", formula: "hung" }, controller.signal).catch(error => error);
+    await vi.advanceTimersByTimeAsync(40);
+    controller.abort();
+    expect(await hung).toMatchObject({ name: "AbortError" });
+    expect(vi.getTimerCount()).toBe(1);
+    const correct = pool.request<number>({ type: "preview", formula: "=42" });
+    const correctId = workers[0].messages[1].id;
+    await vi.advanceTimersByTimeAsync(59);
+    expect(workers[0].terminate).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(workers[0].terminate).toHaveBeenCalledTimes(1);
+    expect(workers[1].messages).toEqual([{ id: correctId, type: "preview", formula: "=42" }]);
+    workers[1].reply({ id: correctId, result: 42 });
+    await expect(correct).resolves.toBe(42);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("terminates an aborted hung request even when no later request arrives", async () => {
+    const { pool, workers, factory } = setup();
+    const controller = new AbortController();
+    const request = pool.request({}, controller.signal).catch(error => error);
+    controller.abort();
+    expect(await request).toMatchObject({ name: "AbortError" });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(workers[0].terminate).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("gives a queued request a full execution budget only after it becomes oldest", async () => {
+    const { pool, workers } = setup();
+    const first = pool.request<number>({});
+    const second = pool.request<string>({});
+    const [a, b] = workers[0].messages;
+    await vi.advanceTimersByTimeAsync(90);
+    workers[0].reply({ id: a.id, result: 1 });
+    await expect(first).resolves.toBe(1);
+    await vi.advanceTimersByTimeAsync(90);
+    expect(workers[0].terminate).not.toHaveBeenCalled();
+    workers[0].reply({ id: b.id, result: "finished within my own budget" });
+    await expect(second).resolves.toBe("finished within my own budget");
+  });
+
+  it("replays only live followers and preserves the submitted payload snapshot", async () => {
+    const { pool, workers } = setup();
+    const hung = pool.request({}).catch(error => error);
+    const controller = new AbortController();
+    const cancelled = pool.request({ type: "cancelled" }, controller.signal).catch(error => error);
+    const payload = { type: "grade", rows: [["Paid", 100]] };
+    const grade = pool.request<string>(payload);
+    const gradeId = workers[0].messages[2].id;
+    payload.rows[0][1] = 999;
+    controller.abort();
+    expect(await cancelled).toMatchObject({ name: "AbortError" });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(await hung).toMatchObject({ code: "timeout" });
+    expect(workers[1].messages).toEqual([{ id: gradeId, type: "grade", rows: [["Paid", 100]] }]);
+    workers[1].reply({ id: gradeId, result: "original data" });
+    await expect(grade).resolves.toBe("original data");
+  });
+
+  it("does not retry a follower indefinitely after two different hung predecessors", async () => {
+    const { pool, workers, factory } = setup();
+    const first = pool.request({ type: "first hung" }).catch(error => error);
+    const second = pool.request({ type: "second hung" }).catch(error => error);
+    const tail = pool.request({ type: "waiting" }).catch(error => error);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(await first).toMatchObject({ code: "timeout" });
+    expect(workers[1].messages.map(message => message.type)).toEqual(["second hung", "waiting"]);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(await second).toMatchObject({ code: "timeout" });
+    // It never consumed an execution budget; replay exhaustion is a start failure.
+    expect(await tail).toMatchObject({ code: "start" });
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("aborts only its request, removes its listener and leaves its neighbor running", async () => {
