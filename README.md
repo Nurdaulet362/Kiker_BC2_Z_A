@@ -59,12 +59,13 @@ The formulas are really executed. The score records performance on this exercise
 
 ```sh
 npm test
+npx playwright install chromium
 npm run test:e2e
 npm run build
 npm run preview
 ```
 
-Browser tests use an installed Google Chrome. Unit tests cover calculation, alternative valid formulas, invalid input, hardcoded answers, linked channel metrics, changing recommendations and persistence. Browser tests cover both complete learner flows, failed submissions, repair, reload, download, fresh assignments, hints, mobile width, reset and navigation.
+Browser tests use Playwright’s bundled Chromium by default. For installed Google Chrome, run `PW_CHANNEL=chrome npm run test:e2e` (the smoke script accepts the same variable). To include Firefox and WebKit, install them with `npx playwright install firefox webkit` and run `PW_ALL_BROWSERS=1 npm run test:e2e`. Unit tests cover calculation, alternative valid formulas, invalid input, hardcoded answers, linked channel metrics, changing recommendations and persistence. Browser tests cover both complete learner flows, failed submissions, repair, reload, download, fresh assignments, hints, mobile width, reset and navigation.
 
 For the latest checks and limitations, see [QA_REPORT.md](QA_REPORT.md). To test a running production preview instead of the development server:
 

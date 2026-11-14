@@ -4,7 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173/";
 const out = ".impeccable/review/ecc-qa";
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ channel: "chrome" });
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL });
 const page = await browser.newPage({
   viewport: { width: 1440, height: 1000 },
   reducedMotion: "reduce",
@@ -73,7 +73,7 @@ async function capture(name) {
 }
 
 try {
-  await page.goto(baseURL);
+  await page.goto(new URL("/#trial", baseURL).href);
   await capture("home");
   await page.getByRole("button", { name: "Start the work trial" }).click();
   await expect(page.locator(".sim-live-result strong")).toHaveText("$3,280.00");
@@ -84,11 +84,11 @@ try {
   await page.getByRole("button", { name: "Continue to your decision" }).click();
   await page.getByRole("radio", { name: "Ads", exact: true }).check();
   await page
-    .getByRole("radio", { name: "The number of paid orders", exact: true })
+    .getByRole("radio", { name: "More paid orders show which channel can absorb more budget", exact: true })
     .check();
   await page
     .getByRole("radio", {
-      name: "The same return is guaranteed at a higher budget.",
+      name: "A positive return means the budget can be scaled without added risk.",
     })
     .check();
   await capture("decision");
