@@ -22,7 +22,7 @@ If browser storage is unavailable, an in-memory fallback preserves both drafts w
 ## Demonstrate the learning product
 
 1. Open **Деньги, которых не было**, then **Открыть отчёт**.
-2. Change the cancelled order from $650 to $2,300. The broken SUM reports $3,680, although paid revenue is still $1,200.
+2. Change the cancelled order from $650 to `2300` (enter the number without a thousands separator). The broken SUM reports $3,680, although paid revenue is still $1,200.
 3. Identify the missing status filter and use `=SUMIF(B2:B101,"Paid",C2:C101)`. The result becomes $1,200.
 4. Check the solution against independent datasets, then answer the separate transfer question ($900).
 5. The review awards 20 points for diagnosis, up to 50 for repair and 30 for transfer. A hardcoded `=1200` fails the varied datasets.
