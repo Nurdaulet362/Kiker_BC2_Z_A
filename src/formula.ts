@@ -1,3 +1,4 @@
+import { formulaFailure, type FormulaIssue } from "./formula-errors";
 import FormulaParser from "fast-formula-parser";
 import {
   expectedRevenue,
@@ -7,9 +8,9 @@ import {
 } from "./model";
 
 export type Calculation =
-  { value: number; error?: never } | { error: string; value?: never };
+  { value: number; error?: never; code?: never; params?: never } | (FormulaIssue & { value?: never });
 export type GridCalculation =
-  { value: number | "N/A"; error?: never } | { error: string; value?: never };
+  { value: number | "N/A"; error?: never; code?: never; params?: never } | (FormulaIssue & { value?: never });
 export type Check = {
   name: string;
   description: string;
@@ -17,6 +18,8 @@ export type Check = {
   actual: number | null;
   passed: boolean;
   error?: string;
+  code?: FormulaIssue["code"];
+  params?: FormulaIssue["params"];
 };
 const FUNCTIONS = new Set([
   "SUM",
@@ -47,9 +50,7 @@ export function calculate(formula: string, rows: Order[]): Calculation {
   ];
   const result = calculateGrid(formula, data);
   if (result.value === "N/A")
-    return {
-      error: "Revenue must be a number, including zero for an empty report.",
-    };
+    return formulaFailure("result");
   return result as Calculation;
 }
 
@@ -60,18 +61,16 @@ export function calculateGrid(
 ): GridCalculation {
   const end = `${String.fromCharCode(64 + lastColumn)}101`;
   if (!formula.trim().startsWith("="))
-    return { error: "Start your formula with =, for example =SUM(C2:C101)." };
+    return formulaFailure("prefix");
   if (formula.length > 1000)
-    return { error: "Keep your formula under 1,000 characters." };
+    return formulaFailure("length");
   const expression = formula.trim().slice(1);
   const withoutStrings = expression.replace(/"(?:[^"]|"")*"/g, '""');
   if (/[!\[\]{}]/.test(withoutStrings))
-    return { error: `Use cells on this sheet, from A1 to ${end}.` };
+    return formulaFailure("range", { end });
   for (const match of withoutStrings.matchAll(/([A-Z][A-Z0-9_.]*)\s*\(/gi)) {
     if (!FUNCTIONS.has(match[1].toUpperCase()))
-      return {
-        error: `${match[1].toUpperCase()} is outside this exercise. Try SUMIF, SUM or IF.`,
-      };
+      return formulaFailure("function", { fn: match[1].toUpperCase() });
   }
   const withoutNumbers = withoutStrings.replace(
     /(?<![A-Za-z_$.\d])\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g,
@@ -84,12 +83,11 @@ export function calculateGrid(
       Number(match[2]) > 101 ||
       Number(match[2]) < 1
     ) {
-      return {
-        error: `Use cells from A1 to ${end}. This exercise has room for 100 data rows.`,
-      };
+      return formulaFailure("range", { end });
     }
   }
   const cell = (row: number, col: number) => data[row - 1]?.[col - 1] ?? null;
+  let rangeExceeded = false;
   try {
     const parser = new FormulaParser({
       onCell: ({ row, col }: { row: number; col: number }) => cell(row, col),
@@ -100,8 +98,10 @@ export function calculateGrid(
         from: { row: number; col: number };
         to: { row: number; col: number };
       }) => {
-        if (from.row < 1 || to.row > 101 || from.col < 1 || to.col > lastColumn)
+        if (from.row < 1 || to.row > 101 || from.col < 1 || to.col > lastColumn) {
+          rangeExceeded = true;
           throw new Error("range");
+        }
         return Array.from({ length: to.row - from.row + 1 }, (_, index) =>
           Array.from({ length: to.col - from.col + 1 }, (_, column) =>
             cell(from.row + index, from.col + column),
@@ -123,16 +123,10 @@ export function calculateGrid(
     });
     if (value === "N/A") return { value };
     if (typeof value !== "number" || !Number.isFinite(value))
-      return {
-        error:
-          "Your formula needs to return one number, or the text N/A when the brief requires it.",
-      };
+      return formulaFailure("result");
     return { value };
   } catch {
-    return {
-      error:
-        "Could not calculate this formula. Check the function, commas, quotes and matching parentheses.",
-    };
+    return formulaFailure(rangeExceeded ? "range" : "syntax", rangeExceeded ? { end } : undefined);
   }
 }
 
@@ -147,7 +141,7 @@ export function verify(formula: string, rows: Order[]): Check[] {
       actual: result.value ?? null,
       passed:
         result.value !== undefined && Math.abs(result.value - expected) < 0.005,
-      ...(result.error ? { error: result.error } : {}),
+      ...(result.error ? { error: result.error, code: result.code, params: result.params } : {}),
     };
   });
 }

@@ -1,3 +1,4 @@
+import { formulaIssue, localizeFormulaError, type FormulaIssue } from "../formula-errors";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -44,7 +45,10 @@ function text(language: Language, en: string, ru: string) {
   return language === "ru" ? ru : en;
 }
 
-function readableError(message: string, language: Language) {
+export function readableError(input: string | FormulaIssue, language: Language) {
+  const issue = typeof input === "string" ? { error: input } : input;
+  if (issue.code) return localizeFormulaError(issue, language);
+  const message = issue.error;
   const validation: Record<string, string> = {
     "Use up to 100 data rows.": "В отчёте может быть не больше 100 строк данных.",
     "Check the report's row structure.": "Проверьте структуру строк отчёта.",
@@ -59,9 +63,6 @@ function readableError(message: string, language: Language) {
   };
   if (language === "ru" && validation[message]) return validation[message];
   const localized = feedback((key, values) => translate(language, key, values), message);
-  if (language === "ru" && localized === message) {
-    return "Не удалось проверить данные. Используйте неотрицательные числа и проверьте формулу: названия функций, запятые, кавычки и скобки.";
-  }
   return localized;
 }
 
@@ -90,7 +91,7 @@ function Choice({
 export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language }: WorkspaceProps) {
   const tr = (en: string, ru: string) => text(language, en, ru);
   const heading = useRef<HTMLHeadingElement>(null);
-  const [preview, setPreview] = useState<{ value?: number | string; error?: string } | null>(null);
+  const [preview, setPreview] = useState<{ value?: number | string; error?: string; code?: FormulaIssue["code"]; params?: FormulaIssue["params"] } | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -127,7 +128,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
         .then((result) => { if (current) setPreview(result); })
         .catch((err: unknown) => {
           if (current && !(err instanceof DOMException && err.name === "AbortError")) {
-            setPreview({ error: err instanceof Error ? err.message : "Could not calculate this formula." });
+            setPreview(formulaIssue(err));
           }
         })
         .finally(() => { if (current) setCalculating(false); });
@@ -201,7 +202,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
       else setRepairReview(result);
     } catch (err) {
       if (id === requestId.current && !controller.signal.aborted) {
-        setError(readableError(err instanceof Error ? err.message : "Could not check the solution. Please try again.", language));
+        setError(readableError(formulaIssue(err), language));
       }
     } finally {
       if (id === requestId.current) setBusy(false);
@@ -276,7 +277,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
 
           <section className="lr-answer-panel" aria-label={tr("Your solution", "Ваше решение")}>
             <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">1</span>{tr("What was wrong with the original report?", "В чём ошибка исходного отчёта?")}</legend>{diagnosisOptions.map((option) => <Choice key={option.id} name="diagnosis" id={option.id} selected={draft.diagnosis} onChange={(diagnosis) => updateDraft({ diagnosis })}>{option.label[language]}</Choice>)}</fieldset>
-            {lesson.kind === "formula" ? <div className="lr-formula-field"><label htmlFor="lr-formula"><span className="lr-question-number" aria-hidden="true">2</span>{tr("Your formula", "Ваша формула")}</label><p>{tr("The current formula contains an error. Edit it below.", "В текущей формуле есть ошибка. Исправьте её ниже.")}</p><div className="lr-formula-editor"><span aria-hidden="true">ƒx</span><textarea id="lr-formula" rows={3} value={draft.formula} maxLength={1000} spellCheck={false} onChange={(e) => updateDraft({ formula: e.target.value })} aria-describedby="lr-formula-help" /></div><p id="lr-formula-help" className="lr-field-help">{tr('Use English functions and status values ("Paid"), with commas. Rows 2–101 are available.', 'Названия функций и статусы ("Paid") — на английском, разделитель — запятая. Доступны строки 2–101.')}</p><div className="lr-output" role="status" aria-live="polite"><span>{tr("Your formula returns", "По вашей формуле")}</span>{calculating ? <span className="lr-calculating"><LoaderCircle size={17} className="lr-spin" />{tr("Calculating…", "Считаем…")}</span> : preview?.error ? <span className="lr-output-error">{readableError(preview.error, language)}</span> : <strong>{preview?.value !== undefined ? formatLessonValue(preview.value, lesson.format, language) : "—"}</strong>}</div></div> : <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">2</span>{tr("What would you recommend?", "Что вы порекомендуете?")}</legend>{lesson.decisionOptions?.map((option) => <Choice key={option.id} name="decision" id={option.id} selected={draft.decision} onChange={(decision) => updateDraft({ decision })}>{option.label[language]}</Choice>)}</fieldset>}
+            {lesson.kind === "formula" ? <div className="lr-formula-field"><label htmlFor="lr-formula"><span className="lr-question-number" aria-hidden="true">2</span>{tr("Your formula", "Ваша формула")}</label><p>{tr("The current formula contains an error. Edit it below.", "В текущей формуле есть ошибка. Исправьте её ниже.")}</p><div className="lr-formula-editor"><span aria-hidden="true">ƒx</span><textarea id="lr-formula" rows={3} value={draft.formula} maxLength={1000} spellCheck={false} onChange={(e) => updateDraft({ formula: e.target.value })} aria-describedby="lr-formula-help" /></div><p id="lr-formula-help" className="lr-field-help">{tr('Use English functions and status values ("Paid"), with commas. Rows 2–101 are available.', 'Названия функций и статусы ("Paid") — на английском, разделитель — запятая. Доступны строки 2–101.')}</p><div className="lr-output" role="status" aria-live="polite"><span>{tr("Your formula returns", "По вашей формуле")}</span>{calculating ? <span className="lr-calculating"><LoaderCircle size={17} className="lr-spin" />{tr("Calculating…", "Считаем…")}</span> : preview?.error ? <span className="lr-output-error">{readableError({ ...preview, error: preview.error }, language)}</span> : <strong>{preview?.value !== undefined ? formatLessonValue(preview.value, lesson.format, language) : "—"}</strong>}</div></div> : <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">2</span>{tr("What would you recommend?", "Что вы порекомендуете?")}</legend>{lesson.decisionOptions?.map((option) => <Choice key={option.id} name="decision" id={option.id} selected={draft.decision} onChange={(decision) => updateDraft({ decision })}>{option.label[language]}</Choice>)}</fieldset>}
             {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{error}</p>}
             {repairReview && <div className={`lr-inline-feedback${repairReview.repairPassed && repairReview.diagnosisPassed ? " is-success" : " is-review"}`} role="status"><span>{repairReview.repairPassed && repairReview.diagnosisPassed ? <CheckCheck size={21} /> : <CircleAlert size={21} />}</span><div><strong>{repairReview.repairPassed && repairReview.diagnosisPassed ? tr("Your solution holds up", "Решение выдержало проверку") : tr("There is still something to explore", "Есть над чем поработать")}</strong><p>{repairReview.repairPassed ? (lesson.kind === "decision" ? tr("Your recommendation follows the current data.", "Рекомендация соответствует текущим данным.") : tr("The calculation works on the test data.", "Расчёт работает на проверочных данных.")) : tr(`${repairReview.checks.filter((check) => check.passed).length} of ${repairReview.checks.length} checks passed. Try the hint and check again, or continue to the review.`, `Пройдено ${repairReview.checks.filter((check) => check.passed).length} из ${repairReview.checks.length} проверок. Можно открыть подсказку и повторить проверку или продолжить до разбора.`)}</p>{!repairReview.diagnosisPassed && <p>{tr("Reconsider the cause you selected.", "Проверьте выбранную причину ошибки.")}</p>}</div></div>}
             <button type="button" className="lr-btn-secondary lr-check-button" onClick={() => void assess(false)} disabled={busy}>{busy ? <LoaderCircle size={17} className="lr-spin" /> : <CheckCheck size={18} />}{busy ? tr("Checking…", "Проверяем…") : tr("Check solution", "Проверить решение")}</button>
@@ -340,7 +341,7 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
     {result.solutionRevealed && <p className="lr-inline-feedback is-review" role="status">{tr("You viewed the solution — try a similar case. This lesson is not counted as completed; repair points are capped at 25 out of 50.", "Вы смотрели решение — попробуйте похожий кейс. Занятие не засчитано как пройденное; за исправление можно получить не более 25 из 50 баллов.")}</p>}
     <div className="lr-review-grid">{components.map((component, index) => <section className={`lr-review-item${component.passed ? " is-success" : " is-review"}`} key={index}><div className="lr-review-item-top">{component.passed ? <CheckCheck size={20} /> : <Target size={20} />}<span>{component.points}<small> / {component.max}</small></span></div><h2>{component.label}</h2><p>{component.detail}</p></section>)}</div>
     <section className="lr-review-explanation"><div className="lr-panel-heading"><Lightbulb size={22} /><h2>{tr("The rule, with the original example", "Правило на исходном примере")}</h2></div><p>{lesson.explanation[language]}</p>{lesson.kind === "formula" && <div className="lr-solution"><span>{tr("One possible formula", "Один из вариантов формулы")}</span><code>{lesson.solution}</code></div>}{result.snapshot?.formula && lesson.kind === "formula" && <div className="lr-submitted-formula"><span>{tr("Your submitted formula", "Ваша формула при отправке")}</span><code>{result.snapshot.formula}</code></div>}<div className="lr-transfer-explanation"><strong>{tr("In the new situation", "В новой ситуации")}</strong><p>{lesson.transfer.explanation[language]}</p></div></section>
-    <details className="lr-checks"><summary><CheckCheck size={18} />{tr("See the checks", "Посмотреть проверки")}<span>{result.checks.filter((check) => check.passed).length}/{result.checks.length}</span><ChevronDown size={17} /></summary><ul>{result.checks.map((check, index) => <li key={index}><span className={check.passed ? "lr-check-pass" : "lr-check-fail"}>{check.passed ? <Check size={17} /> : <CircleAlert size={17} />}</span><div><strong>{check.label[language]}</strong><p>{tr("Expected", "Ожидалось")}: <code>{checkDisplay(check.expected)}</code> <span aria-hidden="true">·</span> {tr("Your result", "Ваш результат")}: <code>{checkDisplay(check.actual)}</code></p></div></li>)}</ul></details>
+    <details className="lr-checks"><summary><CheckCheck size={18} />{tr("See the checks", "Посмотреть проверки")}<span>{result.checks.filter((check) => check.passed).length}/{result.checks.length}</span><ChevronDown size={17} /></summary><ul>{result.checks.map((check, index) => <li key={index}><span className={check.passed ? "lr-check-pass" : "lr-check-fail"}>{check.passed ? <Check size={17} /> : <CircleAlert size={17} />}</span><div><strong>{check.label[language]}</strong><p>{tr("Expected", "Ожидалось")}: <code>{checkDisplay(check.expected)}</code> <span aria-hidden="true">·</span> {tr("Your result", "Ваш результат")}: <code>{check.code ? localizeFormulaError({ error: check.actual, code: check.code, params: check.params }, language) : checkDisplay(check.actual)}</code></p></div></li>)}</ul></details>
     <section className="lr-next-lesson"><div><p className="lr-eyebrow">{tr("Your next step", "Ваш следующий шаг")}</p><h2>{next.title[language]}</h2><p>{recommendation.reason[language]}</p></div><button type="button" className="lr-btn-primary" onClick={() => onStart(recommendation.lessonId)}>{tr("Next lesson", "Следующее задание")}<ArrowRight size={18} /></button></section>
     <div className="lr-work-footer"><button type="button" className="lr-btn-quiet" onClick={() => onStart(lesson.id)}><RotateCcw size={16} />{tr("Try again", "Попробовать ещё раз")}</button><span>{tr("This score describes your practice, not a professional qualification.", "Баллы показывают результат задания и не являются профессиональной оценкой.")}</span></div>
   </article>;

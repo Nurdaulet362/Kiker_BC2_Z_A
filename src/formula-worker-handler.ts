@@ -1,3 +1,4 @@
+import { formulaIssue } from "./formula-errors";
 import { calculate, verify } from "./formula";
 import type { Order } from "./model";
 
@@ -16,7 +17,7 @@ export function handleFormulaRequest(request: FormulaRequest) {
   } catch (error) {
     return {
       id: request.id,
-      error: error instanceof Error ? error.message : "Could not check this report. Please try again.",
+      ...formulaIssue(error),
     };
   }
 }

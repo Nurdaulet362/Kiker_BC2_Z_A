@@ -1,3 +1,5 @@
+import { formulaIssue, type FormulaIssue } from "../formula-errors";
+import { useErrorTranslation } from "../i18n";
 import {
   feedback,
   LanguageSwitcher,
@@ -73,7 +75,7 @@ const hintCopy = {
     "Compare (paid revenue − ad spend) / ad spend. Choose the higher positive ratio for a small test, hold the budget if neither is positive or they tie, and acknowledge that one week cannot guarantee future returns.",
 };
 
-function downloadReview(state: TrialState, result: Submission, t: Translate) {
+function downloadReview(state: TrialState, result: Submission, t: Translate, errorText: (issue: FormulaIssue) => string) {
   const snapshot = result.snapshot;
   const text = [
     t("# Fix the Report — Work trial review"),
@@ -99,7 +101,7 @@ function downloadReview(state: TrialState, result: Submission, t: Translate) {
           status: t(c.passed ? "PASS" : "REVIEW"),
           name: feedback(t, c.name),
           expected: feedback(t, c.expected),
-          actual: feedback(t, c.actual),
+          actual: errorText({ error: c.actual, code: c.code, params: c.params }),
         }),
       ),
       "",
@@ -138,6 +140,7 @@ function downloadReview(state: TrialState, result: Submission, t: Translate) {
 
 export function Simulation() {
   const t = useTranslation();
+  const errorText = useErrorTranslation();
   const [state, setState] = useState<TrialState>(() => {
     try {
       return restoreTrial(getSessionItem(TRIAL_KEY));
@@ -148,7 +151,7 @@ export function Simulation() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<FormulaIssue | null>(null);
   const [saveError, setSaveError] = useState(false);
   const [dialog, setDialog] = useState<"help" | "restore" | "new" | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -183,8 +186,8 @@ export function Simulation() {
         .catch((e) => {
           if (e.name !== "AbortError") {
             setPreview({
-              revenue: { error: e.message },
-              conversion: { error: e.message },
+              revenue: formulaIssue(e),
+              conversion: formulaIssue(e),
             });
             setCalculating(false);
           }
@@ -213,7 +216,7 @@ export function Simulation() {
 
   function answer<K extends keyof Answers>(key: K, value: Answers[K]) {
     setState((s) => ({ ...s, answers: { ...s.answers, [key]: value } }));
-    setError("");
+    setError(null);
   }
   function editOrder(index: number, field: "status" | "amount", value: string) {
     setState((s) => ({
@@ -248,13 +251,13 @@ export function Simulation() {
     const next = initialTrial((state.scenario.seed + 1) % 1000000);
     setState({ ...next, stage: "work", startedAt: new Date().toISOString() });
     setDialog(null);
-    setError("");
+    setError(null);
     setPreview(null);
   }
   async function submit() {
     if (rowError) return;
     setBusy(true);
-    setError("");
+    setError(null);
     const controller = new AbortController();
     assessment.current = controller;
     try {
@@ -276,7 +279,7 @@ export function Simulation() {
         submissions: [...s.submissions.slice(-49), result],
       }));
     } catch (e) {
-      if (e instanceof Error && e.name !== "AbortError") setError(e.message);
+      if (e instanceof Error && e.name !== "AbortError") setError(formulaIssue(e));
     } finally {
       setBusy(false);
     }
@@ -690,7 +693,7 @@ export function Simulation() {
                       </div>
                       {preview?.revenue.error && !calculating && (
                         <p className="sim-error" role="alert">
-                          {feedback(t, preview.revenue.error)}
+                          {errorText(preview.revenue)}
                         </p>
                       )}
                     </div>
@@ -858,7 +861,7 @@ export function Simulation() {
                       </div>
                       {preview?.conversion.error && !calculating && (
                         <p className="sim-error" role="alert">
-                          {feedback(t, preview.conversion.error)}
+                          {errorText(preview.conversion)}
                         </p>
                       )}
                     </div>
@@ -1119,7 +1122,7 @@ export function Simulation() {
                           <br />
                           {t("Expected {expected}; submitted {actual}.", {
                             expected: feedback(t, c.expected),
-                            actual: feedback(t, c.actual),
+                            actual: errorText({ error: c.actual, code: c.code, params: c.params }),
                           })}
                         </p>
                       ))}
@@ -1176,7 +1179,7 @@ export function Simulation() {
                 </div>
                 {error && (
                   <p className="sim-error" role="alert">
-                    {feedback(t, error)}
+                    {errorText(error)}
                   </p>
                 )}
               </section>
@@ -1321,7 +1324,7 @@ export function Simulation() {
                         <span>
                           {t("Expected: {expected} · Submitted: {actual}", {
                             expected: feedback(t, c.expected),
-                            actual: feedback(t, c.actual),
+                            actual: errorText({ error: c.actual, code: c.code, params: c.params }),
                           })}
                         </span>
                         {!c.passed && <p>{feedback(t, c.explanation)}</p>}
@@ -1343,7 +1346,7 @@ export function Simulation() {
               </button>
               <button
                 className="secondary-button"
-                onClick={() => downloadReview(state, latest, t)}
+                onClick={() => downloadReview(state, latest, t, errorText)}
               >
                 <Download size={16} />
                 {t("Download my review")}{" "}

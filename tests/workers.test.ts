@@ -13,7 +13,7 @@ describe("formula worker failures", () => {
     const invalid = { ...request, rows: null as unknown as typeof request.rows };
     const response = handleFormulaRequest(invalid);
     expect(response.id).toBe(17);
-    expect(response.error).toBeTruthy();
+    expect("error" in response && response.error).toBeTruthy();
     expect(response).not.toHaveProperty("result");
   });
 
@@ -32,6 +32,6 @@ describe("formula worker failures", () => {
     await expect(computation).rejects.toThrow("Computation failed");
     const startup = runCalculation("calculate", "=1", []);
     FakeWorker.last.onerror?.();
-    await expect(startup).rejects.toThrow(/could not start/);
+    await expect(startup).rejects.toMatchObject({ code: "start" });
   });
 });

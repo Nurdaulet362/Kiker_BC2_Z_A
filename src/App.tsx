@@ -1,3 +1,5 @@
+import { formulaIssue, type FormulaIssue } from "./formula-errors";
+import { useErrorTranslation } from "./i18n";
 import {
   feedback,
   LanguageSwitcher,
@@ -116,6 +118,7 @@ function Brand() {
 
 export function App() {
   const t = useTranslation();
+  const errorText = useErrorTranslation();
   const [progress, setProgress] = useState<Progress>(() => {
     try {
       return restoreProgress(getSessionItem(STORAGE_KEY));
@@ -129,7 +132,7 @@ export function App() {
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [checks, setChecks] = useState<FormulaCheck[] | null>(null);
   const [verifying, setVerifying] = useState(false);
-  const [verifyError, setVerifyError] = useState("");
+  const [verifyError, setVerifyError] = useState<FormulaIssue | null>(null);
   const [dialog, setDialog] = useState<"help" | "reset" | "review" | null>(
     () =>
       new URLSearchParams(location.search).has("review") ? "review" : null,
@@ -167,7 +170,7 @@ export function App() {
         })
         .catch((error) => {
           if (error.name !== "AbortError") {
-            setCalculation({ error: error.message });
+            setCalculation(formulaIssue(error));
             setCalculating(false);
           }
         });
@@ -187,7 +190,7 @@ export function App() {
     setProgress((state) => ({ ...state, rows: nextRows }));
     setInspection(null);
     setChecks(null);
-    setVerifyError("");
+    setVerifyError(null);
   }
   function updateOrder(index: number, change: Partial<Order>) {
     editRows(
@@ -234,7 +237,7 @@ export function App() {
   }
   async function verifyFormula() {
     setVerifying(true);
-    setVerifyError("");
+    setVerifyError(null);
     setChecks(null);
     const controller = new AbortController();
     verificationController.current = controller;
@@ -256,7 +259,7 @@ export function App() {
       }
     } catch (error) {
       if (error instanceof Error && error.name !== "AbortError")
-        setVerifyError(error.message);
+        setVerifyError(formulaIssue(error));
     } finally {
       setVerifying(false);
     }
@@ -266,7 +269,7 @@ export function App() {
     setProgress(initialProgress());
     setInspection(null);
     setChecks(null);
-    setVerifyError("");
+    setVerifyError(null);
     setDialog(null);
     setFormulaHelp(false);
   }
@@ -540,7 +543,7 @@ export function App() {
                               formula: event.target.value,
                             }));
                             setChecks(null);
-                            setVerifyError("");
+                            setVerifyError(null);
                           }}
                           maxLength={1000}
                           aria-describedby="formula-instructions"
@@ -733,7 +736,7 @@ export function App() {
                   </p>
                   {calculation?.error && !calculating && (
                     <p className="inline-error" role="alert">
-                      {feedback(t, calculation.error)}
+                      {errorText(calculation)}
                     </p>
                   )}
                   {stage === "investigate" ? (
@@ -847,7 +850,7 @@ export function App() {
                       </button>
                       {verifyError && (
                         <p className="inline-error" role="alert">
-                          {feedback(t, verifyError)}
+                          {errorText(verifyError)}
                         </p>
                       )}
                       {checks && !checks.every((check) => check.passed) && (
@@ -878,7 +881,7 @@ export function App() {
                                 <span>{feedback(t, check.description)}</span>
                                 <span>
                                   {check.error
-                                    ? feedback(t, check.error)
+                                    ? errorText({ error: check.error, code: check.code, params: check.params })
                                     : t("Expected {expected} · got {actual}", {
                                         expected: money(check.expected),
                                         actual: money(check.actual!),

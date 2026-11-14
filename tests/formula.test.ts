@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculate, verify } from "../src/formula";
+import { calculate, calculateGrid, verify } from "../src/formula";
 import {
   CORRECT_EXAMPLE,
   ORIGINAL_FORMULA,
@@ -9,6 +9,18 @@ import {
 } from "../src/model";
 
 describe("cancelled order exercise", () => {
+  it.each([
+    ["SUM(C2:C101)", "prefix"],
+    [`=${"1".repeat(1000)}`, "length"],
+    ["=SUM(", "syntax"],
+    ["=SUM(E5)", "range"],
+    ['=WEBSERVICE("https://example.com")', "function"],
+    ['="text"', "result"],
+    ['=SUMIF(B:B,"Paid",C:C)', "range"],
+    ["=SUM(C:C)", "range"],
+  ])("preserves the error code for %s", (formula, code) => {
+    expect(calculateGrid(formula, [["Order", "Status", "Amount"]])).toMatchObject({ code });
+  });
   it("reproduces the hidden mistake and detects a learner-created counterexample", () => {
     const { rows } = initialProgress();
     expect(calculate(ORIGINAL_FORMULA, rows).value).toBe(1200);

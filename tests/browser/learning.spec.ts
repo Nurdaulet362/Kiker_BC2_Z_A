@@ -10,6 +10,20 @@ const transfer = cancelled.transfer.options.find(
   (option) => option.id === cancelled.transfer.correct,
 )!;
 
+test("a timed-out worker shows the timeout reason in Russian and follows the language switch", async ({ page }) => {
+  await page.addInitScript(() => {
+    class SilentWorker {
+      postMessage() {}
+      terminate() {}
+    }
+    Object.defineProperty(window, "Worker", { value: SilentWorker });
+  });
+  await startCancelled(page);
+  await expect(page.locator(".lr-output-error")).toContainText("Время ожидания расчёта истекло", { timeout: 10000 });
+  await page.getByRole("button", { name: "English", exact: true }).click();
+  await expect(page.locator(".lr-output-error")).toContainText(/too long|timed out/i);
+});
+
 async function startCancelled(page: Page) {
   await page.goto("/");
   await page.getByTestId(`lesson-${cancelled.id}`).click();

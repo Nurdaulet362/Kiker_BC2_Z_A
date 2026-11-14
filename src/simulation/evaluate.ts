@@ -116,6 +116,7 @@ export function conversionChecks(
       passed,
       expected: rate(expected),
       actual: result.error ?? rate(result.value),
+      ...(result.code ? { code: result.code, params: result.params } : {}),
       explanation:
         "Divide all paid orders by all leads. Return the text N/A when total leads are zero. Keep the full precision in your formula.",
     };
@@ -138,6 +139,7 @@ export function assess(
         check.error ??
         (check.actual === null ? "No result" : money(check.actual)),
       explanation: check.description,
+      ...(check.code ? { code: check.code, params: check.params } : {}),
     }),
   );
   const conversion = conversionChecks(answers.conversion, scenario);

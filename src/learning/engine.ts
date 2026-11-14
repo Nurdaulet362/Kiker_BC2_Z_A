@@ -1,3 +1,4 @@
+import type { FormulaIssue } from "../formula-errors";
 import { calculateGrid } from "../formula";
 import { chooseChannel } from "../decision";
 import {
@@ -12,7 +13,7 @@ import {
   type Row,
 } from "./model";
 
-export type LessonPreview = { value?: number | string; error?: string };
+export type LessonPreview = { value?: number | string; error?: string; code?: FormulaIssue["code"]; params?: FormulaIssue["params"] };
 const label = (en: string, ru: string): Copy => ({ en, ru });
 const clone = (rows: Row[]): Row[] => rows.map((row) => [...row]);
 const cents = (value: number) => Math.round(value * 100) / 100;
@@ -91,6 +92,7 @@ export function evaluateLesson(input: LessonInput): LessonResult {
           passed: !actual.error && (typeof expected === "number" && typeof actual.value === "number" ? Math.abs(actual.value - expected) < (lesson.format === "money" ? 0.005 : 1e-8) : actual.value === expected),
           expected: formatLessonValue(expected, lesson.format),
           actual: actual.error ?? formatLessonValue(actual.value, lesson.format),
+          ...(actual.code ? { code: actual.code, params: actual.params } : {}),
         };
       })
     : [{ label: label("Decision supported by this report", "Решение подтверждается этим отчётом"), passed: input.decision === expectedDecision(input.rows), expected: expectedDecision(input.rows), actual: input.decision || "—" }];

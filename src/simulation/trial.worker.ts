@@ -1,3 +1,4 @@
+import { formulaIssue } from "../formula-errors";
 import { assess, preview } from "./evaluate";
 import type { Answers, Scenario } from "./model";
 self.onmessage = (
@@ -18,10 +19,7 @@ self.onmessage = (
     });
   } catch (error) {
     self.postMessage({
-      error:
-        error instanceof Error
-          ? error.message
-          : "Could not check this report. Please try again.",
+      ...formulaIssue(error),
     });
   }
 };

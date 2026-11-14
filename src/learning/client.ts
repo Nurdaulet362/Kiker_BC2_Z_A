@@ -1,3 +1,4 @@
+import { FormulaWorkerError } from "../formula-errors";
 import type { LessonPreview } from "./engine";
 import type { LessonInput, LessonResult, Row } from "./model";
 
@@ -7,9 +8,9 @@ function request<T>(payload: unknown, signal?: AbortSignal): Promise<T> {
     const worker = new Worker(new URL("./learning.worker.ts", import.meta.url), { type: "module" });
     const cleanup = () => { clearTimeout(timeout); worker.terminate(); signal?.removeEventListener("abort", abort); };
     const abort = () => { cleanup(); reject(new DOMException("Cancelled", "AbortError")); };
-    const timeout = setTimeout(() => { cleanup(); reject(new Error("That formula took too long. Simplify it and try again.")); }, 6000);
-    worker.onmessage = (event) => { cleanup(); event.data.error ? reject(new Error(event.data.error)) : resolve(event.data.result); };
-    worker.onerror = () => { cleanup(); reject(new Error("Could not start the report checker. Reload and try again; your work stays saved in this browser.")); };
+    const timeout = setTimeout(() => { cleanup(); reject(new FormulaWorkerError("timeout")); }, 6000);
+    worker.onmessage = (event) => { cleanup(); event.data.error ? reject(Object.assign(new Error(event.data.error), { code: event.data.code, params: event.data.params })) : resolve(event.data.result); };
+    worker.onerror = () => { cleanup(); reject(new FormulaWorkerError("start")); };
     signal?.addEventListener("abort", abort, { once: true });
     worker.postMessage(payload);
   });

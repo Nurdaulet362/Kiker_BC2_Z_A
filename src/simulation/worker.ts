@@ -1,3 +1,4 @@
+import { FormulaWorkerError } from "../formula-errors";
 import type { Preview } from "./evaluate";
 import type { Answers, Scenario, Submission } from "./model";
 export function runTrial(
@@ -37,21 +38,19 @@ export function runTrial(
     const timeout = setTimeout(() => {
       cleanup();
       reject(
-        new Error("That formula took too long. Simplify it and try again."),
+        new FormulaWorkerError("timeout"),
       );
     }, 6000);
     worker.onmessage = (event) => {
       cleanup();
       event.data.error
-        ? reject(new Error(event.data.error))
+        ? reject(Object.assign(new Error(event.data.error), { code: event.data.code, params: event.data.params }))
         : resolve(event.data.result);
     };
     worker.onerror = () => {
       cleanup();
       reject(
-        new Error(
-          "Could not start the report checker. Reload and try again; your work stays saved in this browser.",
-        ),
+        new FormulaWorkerError("start"),
       );
     };
     signal?.addEventListener("abort", abort);

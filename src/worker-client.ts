@@ -1,3 +1,4 @@
+import { FormulaWorkerError } from "./formula-errors";
 import type { Order } from "./model";
 import type { Calculation, Check } from "./formula";
 export function runCalculation(
@@ -34,23 +35,19 @@ export function runCalculation(
     const timeout = setTimeout(() => {
       cleanup();
       reject(
-        new Error(
-          "That calculation took too long. Try a simpler formula and run it again.",
-        ),
+        new FormulaWorkerError("timeout"),
       );
     }, 4000);
     worker.onmessage = (event) => {
       cleanup();
       event.data.error
-        ? reject(new Error(event.data.error))
+        ? reject(Object.assign(new Error(event.data.error), { code: event.data.code, params: event.data.params }))
         : resolve(event.data.result);
     };
     worker.onerror = () => {
       cleanup();
       reject(
-        new Error(
-          "The calculation could not start. Reload the page and try again. Your work is saved.",
-        ),
+        new FormulaWorkerError("start"),
       );
     };
     signal?.addEventListener("abort", abort);

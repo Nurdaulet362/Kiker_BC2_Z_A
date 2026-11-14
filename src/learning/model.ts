@@ -1,3 +1,4 @@
+import type { FormulaIssue } from "../formula-errors";
 export type Copy = { en: string; ru: string };
 export type SkillId = "revenue" | "conversion" | "decisions";
 export type Row = (string | number)[];
@@ -53,7 +54,7 @@ export type LessonResult = {
   diagnosisPassed: boolean;
   repairPassed: boolean;
   transferPassed: boolean;
-  checks: { label: Copy; passed: boolean; expected: string; actual: string }[];
+  checks: { label: Copy; passed: boolean; expected: string; actual: string; code?: FormulaIssue["code"]; params?: FormulaIssue["params"] }[];
   at: string;
   snapshot?: LessonInput;
 };

@@ -1,3 +1,4 @@
+import { localizeFormulaError, type FormulaIssue } from "./formula-errors";
 import { createContext, Fragment, useContext, type ReactNode } from "react";
 import russian from "./locales/ru.json";
 
@@ -141,4 +142,10 @@ export function feedback(t: Translate, message: string) {
       );
   }
   return t(message);
+}
+
+export function useErrorTranslation() {
+  const { language } = useContext(LanguageContext);
+  const t = useTranslation();
+  return (issue: FormulaIssue) => issue.code ? localizeFormulaError(issue, language) : feedback(t, issue.error);
 }

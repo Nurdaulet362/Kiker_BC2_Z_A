@@ -1,3 +1,4 @@
+import type { FormulaIssue } from "../formula-errors";
 import { expectedRevenue, validateRows, type Order } from "../model";
 import { chooseChannel } from "../decision";
 
@@ -20,6 +21,8 @@ export type Answers = {
   note: string;
 };
 export type TrialCheck = {
+  code?: FormulaIssue["code"];
+  params?: FormulaIssue["params"];
   name: string;
   passed: boolean;
   expected: string;
