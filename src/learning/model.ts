@@ -333,6 +333,16 @@ export function migrate(raw: string | null, audit?: LearningRestoreAudit): Learn
       state = migration(state);
     }
     if (!state || state.version !== 2 || !["all", ...SKILLS.map((skill) => skill.id)].includes(state.goal) || !Array.isArray(state.results) || !state.drafts || typeof state.drafts !== "object" || Array.isArray(state.drafts)) return reject();
+    if (audit) {
+      const knownFields = new Set(["version", "results", "drafts", "attempts", "closedAttempts", "attemptHints", "goal", "goalUpdatedAt"]);
+      if (Object.keys(state).some(key => !knownFields.has(key))) audit.discarded = true;
+      for (const counters of [state.attempts, state.closedAttempts]) {
+        if (counters === undefined) continue;
+        if (!counters || typeof counters !== "object" || Array.isArray(counters)
+          || Object.entries(counters).some(([id, value]) => !LESSONS.some(lesson => lesson.id === id) || !Number.isSafeInteger(value) || value < 0)) audit.discarded = true;
+      }
+      if (state.goalUpdatedAt !== undefined && (!boundedString(state.goalUpdatedAt, 40) || !Number.isFinite(Date.parse(state.goalUpdatedAt)))) audit.discarded = true;
+    }
     const drafts: Record<string, LessonDraft> = {};
     for (const lesson of LESSONS) {
       if (state.drafts[lesson.id] && validDraft(lesson, state.drafts[lesson.id])) drafts[lesson.id] = { ...state.drafts[lesson.id], hintLevel: state.drafts[lesson.id].hintLevel ?? 0 };

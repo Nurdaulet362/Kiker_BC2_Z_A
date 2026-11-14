@@ -97,3 +97,18 @@ it.each([false, true])("backs up invalid incoming bytes even when the primary va
   expect(values.get(`${key}.backup`)).toBe(incoming);
   expect(restoreLearning(values.get(key)!)).toEqual(initialLearning());
 });
+
+
+it.each([
+  { attempts: { "revenue-cancelled": "7" } },
+  { closedAttempts: { "revenue-cancelled": "6" } },
+  { attempts: { "unknown-lesson": 7 } },
+  { attempts: null },
+  { goalUpdatedAt: "not-a-date" },
+  { addedByAnotherValidator: { progress: "recoverable" } },
+])("backs up discarded progress metadata: %j", async fields => {
+  const raw = JSON.stringify({ ...initialLearning(), ...fields }, null, 2);
+  await persist(raw);
+  expect(values.get(`${key}.backup`)).toBe(raw);
+  expect(restoreLearning(values.get(key)!)).toEqual(initialLearning());
+});
