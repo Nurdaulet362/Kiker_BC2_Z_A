@@ -101,12 +101,18 @@ export function evaluateLesson(input: LessonInput): LessonResult {
     Math.round(50 * checks.filter((check) => check.passed).length / checks.length),
     solutionRevealed ? 25 : 50,
   );
-  const score = (diagnosisPassed ? 20 : 0) + repairPoints + (transferPassed ? 30 : 0);
+  const breakdown = {
+    diagnosis: diagnosisPassed ? 20 : 0,
+    repair: repairPoints,
+    transfer: transferPassed ? 30 : 0,
+  };
+  const score = breakdown.diagnosis + breakdown.repair + breakdown.transfer;
   return {
     hintLevel,
     solutionRevealed,
     lessonId: lesson.id,
     score,
+    breakdown,
     diagnosisPassed,
     repairPassed,
     transferPassed,

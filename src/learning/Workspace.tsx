@@ -325,10 +325,15 @@ export function LessonReview({ lesson, result, recommendation, onStart, onHome, 
     heading.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [result]);
+  const breakdown = result.breakdown ?? {
+    diagnosis: result.diagnosisPassed ? 20 : 0,
+    repair: result.score - (result.diagnosisPassed ? 20 : 0) - (result.transferPassed ? 30 : 0),
+    transfer: result.transferPassed ? 30 : 0,
+  };
   const components = [
-    { label: tr("Found the cause", "Причина ошибки"), passed: result.diagnosisPassed, points: result.diagnosisPassed ? 20 : 0, max: 20, detail: result.diagnosisPassed ? tr("You spotted the assumption behind the error.", "Вы нашли неверное допущение в отчёте.") : lesson.diagnosis.find((option) => option.id === lesson.correctDiagnosis)?.label[language] },
-    { label: tr("Repaired the report", "Исправление отчёта"), passed: result.repairPassed, points: result.score - (result.diagnosisPassed ? 20 : 0) - (result.transferPassed ? 30 : 0), max: 50, detail: lesson.kind === "decision" ? tr("Your recommendation was checked against the report you submitted.", "Рекомендация проверена по данным отчёта, который вы отправили.") : tr(`${result.checks.filter((check) => check.passed).length} of ${result.checks.length} checks passed on different data.`, `${result.checks.filter((check) => check.passed).length} из ${result.checks.length} проверок пройдено на разных данных.`) },
-    { label: tr("Applied the principle", "Перенос навыка"), passed: result.transferPassed, points: result.transferPassed ? 30 : 0, max: 30, detail: result.transferPassed ? tr("You used the same idea in a new situation.", "Вы применили принцип в новой ситуации.") : tr("Revisit the example below before your next case.", "Перед следующим кейсом изучите объяснение ниже.") },
+    { label: tr("Found the cause", "Причина ошибки"), passed: result.diagnosisPassed, points: breakdown.diagnosis, max: 20, detail: result.diagnosisPassed ? tr("You spotted the assumption behind the error.", "Вы нашли неверное допущение в отчёте.") : lesson.diagnosis.find((option) => option.id === lesson.correctDiagnosis)?.label[language] },
+    { label: tr("Repaired the report", "Исправление отчёта"), passed: result.repairPassed, points: breakdown.repair, max: 50, detail: lesson.kind === "decision" ? tr("Your recommendation was checked against the report you submitted.", "Рекомендация проверена по данным отчёта, который вы отправили.") : tr(`${result.checks.filter((check) => check.passed).length} of ${result.checks.length} checks passed on different data.`, `${result.checks.filter((check) => check.passed).length} из ${result.checks.length} проверок пройдено на разных данных.`) },
+    { label: tr("Applied the principle", "Перенос навыка"), passed: result.transferPassed, points: breakdown.transfer, max: 30, detail: result.transferPassed ? tr("You used the same idea in a new situation.", "Вы применили принцип в новой ситуации.") : tr("Revisit the example below before your next case.", "Перед следующим кейсом изучите объяснение ниже.") },
   ];
   return <article className="lr-review">
     <div className="lr-work-top"><button className="lr-btn-quiet" type="button" onClick={onHome}><ArrowLeft size={17} />{tr("My learning", "Моё обучение")}</button><span className="lr-eyebrow">{lesson.title[language]}</span></div>

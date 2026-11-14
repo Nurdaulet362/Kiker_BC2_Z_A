@@ -48,6 +48,7 @@ export type LessonResult = {
   solutionRevealed: boolean;
   lessonId: string;
   score: number;
+  breakdown?: { diagnosis: number; repair: number; transfer: number };
   diagnosisPassed: boolean;
   repairPassed: boolean;
   transferPassed: boolean;
@@ -281,6 +282,10 @@ export function restoreLearning(raw: string | null): LearningState {
     const results = state.results.filter((result) => {
       if (!result || !LESSONS.some((lesson) => lesson.id === result.lessonId) || !Number.isInteger(result.score) || result.score < 0 || result.score > 100 || ![result.diagnosisPassed, result.repairPassed, result.transferPassed].every((v) => typeof v === "boolean") || !boundedString(result.at, 40) || !Number.isFinite(Date.parse(result.at)) || !Array.isArray(result.checks) || result.checks.length > 30) return false;
       if (!result.checks.every((check) => check && validCopy(check.label) && typeof check.passed === "boolean" && boundedString(check.expected, 200) && boundedString(check.actual, 1500))) return false;
+      if (result.breakdown !== undefined) {
+        const breakdown = result.breakdown;
+        if (!breakdown || !Number.isInteger(breakdown.diagnosis) || breakdown.diagnosis < 0 || breakdown.diagnosis > 20 || !Number.isInteger(breakdown.repair) || breakdown.repair < 0 || breakdown.repair > 50 || !Number.isInteger(breakdown.transfer) || breakdown.transfer < 0 || breakdown.transfer > 30 || breakdown.diagnosis + breakdown.repair + breakdown.transfer !== result.score) return false;
+      }
       if (!validHintLevel(result.hintLevel)) return false;
       if (result.solutionRevealed !== undefined && result.solutionRevealed !== ((result.hintLevel ?? 0) === 3)) return false;
       if (result.snapshot && (result.snapshot.lessonId !== result.lessonId || !validDraft(getLesson(result.lessonId), { ...result.snapshot, step: 2 }))) return false;

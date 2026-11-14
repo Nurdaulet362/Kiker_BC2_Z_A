@@ -94,6 +94,31 @@ test("answer order stays fixed during an attempt and uses the next attempt seed 
   await expect.poll(ids).toEqual(shuffleOptions(cancelled.diagnosis, `${cancelled.id}:2:diagnosis`).map(option => option.id));
 });
 
+test("lesson review uses persisted score components and supports older reviews without them", async ({ page }) => {
+  await page.addInitScript(() => {
+    const result = {
+      lessonId: "revenue-cancelled", score: 80,
+      diagnosisPassed: true, repairPassed: false, transferPassed: true,
+      breakdown: { diagnosis: 15, repair: 40, transfer: 25 },
+      hintLevel: 0, solutionRevealed: false,
+      checks: [], at: "2026-11-14T10:00:00.000Z",
+    };
+    if (!localStorage.getItem("review-breakdown-fixture")) {
+      localStorage.setItem("fix-the-report.learning.v2", JSON.stringify({ version: 2, results: [result], drafts: {}, goal: "all" }));
+      localStorage.setItem("review-breakdown-fixture", "set");
+    }
+  });
+  await page.goto("/#review/2026-11-14T10:00:00.000Z");
+  await expect(page.locator(".lr-review-item-top > span")).toHaveText(["15 / 20", "40 / 50", "25 / 30"]);
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("fix-the-report.learning.v2")!);
+    delete state.results[0].breakdown;
+    localStorage.setItem("fix-the-report.learning.v2", JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator(".lr-review-item-top > span")).toHaveText(["20 / 20", "30 / 50", "30 / 30"]);
+});
+
 test("a complete Russian lesson saves its review and starts the recommended case", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));

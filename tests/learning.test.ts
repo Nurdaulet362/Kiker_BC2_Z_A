@@ -10,6 +10,37 @@ function solution(id: string): LessonInput {
 }
 
 describe("adaptive learning cases", () => {
+  it("persists score components that add up for correct, partial, incorrect and assisted attempts", () => {
+    for (const lesson of LESSONS) {
+      for (const hintLevel of [0, 2, 3] as const) {
+        const correct = { ...solution(lesson.id), hintLevel };
+        for (const input of [
+          correct,
+          { ...correct, formula: lesson.initialFormula, decision: "", transfer: "", diagnosis: "" },
+          { ...correct, formula: "=1200", diagnosis: "" },
+          { ...correct, transfer: "wrong" },
+        ]) {
+          const result = evaluateLesson(input);
+          const breakdown = result.breakdown!;
+          expect(breakdown.diagnosis + breakdown.repair + breakdown.transfer).toBe(result.score);
+          expect(breakdown.diagnosis).toBe(result.diagnosisPassed ? 20 : 0);
+          expect(breakdown.transfer).toBe(result.transferPassed ? 30 : 0);
+          expect(Number.isInteger(breakdown.repair)).toBe(true);
+          expect(breakdown.repair).toBeLessThanOrEqual(hintLevel === 3 ? 25 : 50);
+          const state = { ...initialLearning(), results: [result] };
+          expect(restoreLearning(JSON.stringify(state)).results[0].breakdown).toEqual(breakdown);
+        }
+      }
+    }
+  });
+  it("retains legacy results without a breakdown and drops only an inconsistent breakdown", () => {
+    const result = evaluateLesson(solution("revenue-cancelled"));
+    const legacy = { ...result };
+    delete legacy.breakdown;
+    const inconsistent = { ...result, breakdown: { diagnosis: 20, repair: 49, transfer: 30 } };
+    const restored = restoreLearning(JSON.stringify({ ...initialLearning(), results: [legacy, inconsistent, result] }));
+    expect(restored.results).toEqual([legacy, result]);
+  });
   it("agrees with the legacy decision on 1000 seeded pairs of channel revenues and spends", () => {
     let seed = 362;
     const amount = () => {
