@@ -33,6 +33,8 @@ function watch(target) {
 }
 watch(page);
 async function capture(name) {
+  // Flush the debounced draft before reproducing this state in fresh pages.
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
   const storage = await page.evaluate(() => ({ ...localStorage }));
   const url = page.url();
   for (const width of [375, 768, 1440]) {

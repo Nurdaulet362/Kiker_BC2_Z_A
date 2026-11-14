@@ -181,9 +181,10 @@ export const rate = (value: number | "N/A" | null | undefined) =>
       ? "—"
       : `${(value * 100).toFixed(2)}%`;
 
-function validSavedScenario(scenario: Scenario | undefined): boolean {
+function validSavedScenario(value: unknown): value is Scenario {
+  if (!value || typeof value !== "object") return false;
+  const scenario = value as Scenario;
   return (
-    !!scenario &&
     Number.isInteger(scenario.seed) &&
     scenario.seed >= 0 &&
     scenario.seed <= 1_000_000 &&
@@ -214,9 +215,10 @@ function validSavedScenario(scenario: Scenario | undefined): boolean {
   );
 }
 
-function validSavedAnswers(a: Answers | undefined): boolean {
+function validSavedAnswers(value: unknown): value is Answers {
+  if (!value || typeof value !== "object") return false;
+  const a = value as Answers;
   return (
-    !!a &&
     typeof a.revenue === "string" &&
     a.revenue.length <= 1000 &&
     typeof a.conversion === "string" &&
@@ -229,7 +231,7 @@ function validSavedAnswers(a: Answers | undefined): boolean {
   );
 }
 
-function validSavedHints(hints: string[] | undefined): boolean {
+function validSavedHints(hints: unknown): hints is string[] {
   return (
     Array.isArray(hints) &&
     hints.length <= 3 &&
@@ -237,72 +239,48 @@ function validSavedHints(hints: string[] | undefined): boolean {
   );
 }
 
+function validSavedSubmission(value: unknown): value is Submission {
+  if (!value || typeof value !== "object") return false;
+  const result = value as Submission;
+  return Number.isFinite(result.score) && result.score >= 0 && result.score <= 100
+    && Number.isFinite(result.seconds)
+    && typeof result.at === "string" && Number.isFinite(Date.parse(result.at))
+    && (result.snapshot === undefined || (
+      !!result.snapshot && validSavedScenario(result.snapshot.scenario)
+      && validSavedAnswers(result.snapshot.answers) && validSavedHints(result.snapshot.hints)
+      && validateScenario(result.snapshot.scenario) === null
+    ))
+    && Array.isArray(result.skills) && result.skills.length === 3
+    && result.skills.every(skill => skill
+      && ["revenue", "conversion", "judgment"].includes(skill.id)
+      && typeof skill.name === "string" && Number.isFinite(skill.score) && Number.isFinite(skill.maximum)
+      && Array.isArray(skill.checks) && skill.checks.length <= 30
+      && skill.checks.every(check => check
+        && typeof check.name === "string" && typeof check.passed === "boolean"
+        && typeof check.expected === "string" && typeof check.actual === "string"
+        && typeof check.explanation === "string"));
+}
+
 export function restoreTrial(raw: string | null): TrialState {
+  const initial = initialTrial();
   try {
-    if (!raw) return initialTrial();
-    const s = JSON.parse(raw) as TrialState;
-    if (
-      s.version !== 1 ||
-      !["home", "work", "result"].includes(s.stage) ||
-      !["revenue", "conversion", "judgment"].includes(s.active)
-    )
-      return initialTrial();
-    if (!validSavedScenario(s.scenario) || !validSavedAnswers(s.answers))
-      return initialTrial();
-    if (
-      !validSavedHints(s.hints) ||
-      !Array.isArray(s.submissions) ||
-      s.submissions.length > 50
-    )
-      return initialTrial();
-    if (
-      !s.submissions.every(
-        (r) =>
-          r &&
-          Number.isFinite(r.score) &&
-          r.score >= 0 &&
-          r.score <= 100 &&
-          Number.isFinite(r.seconds) &&
-          typeof r.at === "string" &&
-          (r.snapshot === undefined ||
-            (r.snapshot &&
-              validSavedScenario(r.snapshot.scenario) &&
-              validSavedAnswers(r.snapshot.answers) &&
-              validSavedHints(r.snapshot.hints) &&
-              validateScenario(r.snapshot.scenario) === null)) &&
-          Array.isArray(r.skills) &&
-          r.skills.length === 3 &&
-          r.skills.every(
-            (k) =>
-              k &&
-              ["revenue", "conversion", "judgment"].includes(k.id) &&
-              typeof k.name === "string" &&
-              Number.isFinite(k.score) &&
-              Number.isFinite(k.maximum) &&
-              Array.isArray(k.checks) &&
-              k.checks.length <= 30 &&
-              k.checks.every(
-                (c) =>
-                  c &&
-                  typeof c.name === "string" &&
-                  typeof c.passed === "boolean" &&
-                  typeof c.expected === "string" &&
-                  typeof c.actual === "string" &&
-                  typeof c.explanation === "string",
-              ),
-          ),
-      )
-    )
-      return initialTrial();
-    if (
-      s.stage !== "home" &&
-      (typeof s.startedAt !== "string" ||
-        !Number.isFinite(Date.parse(s.startedAt)))
-    )
-      return initialTrial();
-    if (s.stage === "result" && !s.submissions.length) return initialTrial();
-    return s;
+    if (!raw) return initial;
+    const state = JSON.parse(raw) as TrialState | null;
+    if (!state || state.version !== 1) return initial;
+    // History is independent of the current draft: validate each review before
+    // deciding whether the report being edited can be resumed.
+    const submissions = Array.isArray(state.submissions)
+      ? state.submissions.filter(validSavedSubmission).slice(-50) : [];
+    const recovered = { ...initial, submissions };
+    if (!["home", "work", "result"].includes(state.stage)
+      || !["revenue", "conversion", "judgment"].includes(state.active)
+      || !validSavedScenario(state.scenario) || !validSavedAnswers(state.answers)
+      || !validSavedHints(state.hints)) return recovered;
+    if (state.stage !== "home" && (typeof state.startedAt !== "string"
+      || !Number.isFinite(Date.parse(state.startedAt)))) return recovered;
+    if (state.stage === "result" && submissions.length === 0) return recovered;
+    return { ...state, submissions };
   } catch {
-    return initialTrial();
+    return initial;
   }
 }

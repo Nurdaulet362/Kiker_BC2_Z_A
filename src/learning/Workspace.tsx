@@ -29,6 +29,7 @@ import {
   type Copy,
   type Lesson,
   type LessonDraft,
+  type LessonInput,
   type LessonResult,
 } from "./model";
 
@@ -37,6 +38,7 @@ type WorkspaceProps = {
   draft: LessonDraft;
   onDraft: (draft: LessonDraft) => void;
   onComplete: (result: LessonResult) => void;
+  onPrepare: (input: LessonInput) => LessonInput;
   onExit: () => void;
   language: Language;
 };
@@ -88,7 +90,7 @@ function Choice({
   );
 }
 
-export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language }: WorkspaceProps) {
+export function Workspace({ lesson, draft, onDraft, onComplete, onPrepare, onExit, language }: WorkspaceProps) {
   const tr = (en: string, ru: string) => text(language, en, ru);
   const heading = useRef<HTMLHeadingElement>(null);
   const [preview, setPreview] = useState<{ value?: number | string; error?: string; code?: FormulaIssue["code"]; params?: FormulaIssue["params"] } | null>(null);
@@ -188,7 +190,8 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
     const id = ++requestId.current;
     setBusy(true);
     try {
-      const result = await gradeLesson({
+      const result = await gradeLesson(onPrepare({
+        attempt: draft.attempt,
         lessonId: lesson.id,
         rows: draft.rows,
         formula: draft.formula,
@@ -196,7 +199,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onExit, language
         decision: draft.decision,
         transfer: draft.transfer,
         hintLevel: draft.hintLevel,
-      }, controller.signal);
+      }), controller.signal);
       if (id !== requestId.current || controller.signal.aborted) return;
       if (complete) onComplete(result);
       else setRepairReview(result);

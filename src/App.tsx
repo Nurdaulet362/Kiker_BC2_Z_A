@@ -46,7 +46,7 @@ import {
 } from "./model";
 import type { Calculation, Check as FormulaCheck } from "./formula";
 import { runCalculation } from "./worker-client";
-import { getSessionItem, setSessionItem } from "./session-storage";
+import { configureSessionItem, getSessionItem, setSessionItem, subscribeSaveStatus } from "./session-storage";
 
 type Inspection = { kind: "match" | "found" | "error"; message: string };
 const hints = [
@@ -116,6 +116,8 @@ function Brand() {
   );
 }
 
+configureSessionItem(STORAGE_KEY, { version: 1 });
+
 export function App() {
   const t = useTranslation();
   const errorText = useErrorTranslation();
@@ -127,6 +129,7 @@ export function App() {
     }
   });
   const [saveError, setSaveError] = useState(false);
+  useEffect(() => subscribeSaveStatus(STORAGE_KEY, setSaveError), []);
   const [calculation, setCalculation] = useState<Calculation | null>(null);
   const [calculating, setCalculating] = useState(true);
   const [inspection, setInspection] = useState<Inspection | null>(null);
@@ -153,7 +156,6 @@ export function App() {
   useEffect(() => {
     try {
       setSessionItem(STORAGE_KEY, JSON.stringify(progress));
-      setSaveError(false);
     } catch {
       setSaveError(true);
     }

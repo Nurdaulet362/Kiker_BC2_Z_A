@@ -114,4 +114,40 @@ describe("cancelled order exercise", () => {
       expect(restoreProgress(invalid)).toEqual(original);
     }
   });
+  it("recovers valid guided evidence and counters independently of corrupt draft fields", () => {
+    const state = initialProgress();
+    state.rows.push({ id: "ORD-1046", status: "Cancelled", amount: "300" });
+    state.formula = CORRECT_EXAMPLE;
+    state.stage = "complete";
+    state.evidence = { reported: 1500, expected: 1200, rows: state.rows.map(row => ({ ...row })) };
+    state.attempts = 7;
+    state.hints = 2;
+    state.completedAt = "2026-11-14T10:00:00.000Z";
+    expect(restoreProgress(JSON.stringify(state))).toEqual(state);
+    expect(restoreProgress(JSON.stringify({ ...state, hints: -1 }))).toEqual({ ...state, hints: 0 });
+    expect(restoreProgress(JSON.stringify({ ...state, attempts: null }))).toEqual({ ...state, attempts: 0 });
+    expect(restoreProgress(JSON.stringify({ ...state, rows: [null] }))).toEqual({
+      ...state, rows: initialProgress().rows, stage: "investigate", completedAt: null,
+    });
+    expect(restoreProgress(JSON.stringify({ ...state, formula: null }))).toEqual({
+      ...state, formula: ORIGINAL_FORMULA, stage: "investigate", completedAt: null,
+    });
+    expect(restoreProgress(JSON.stringify({ ...state, completedAt: "broken" }))).toEqual({
+      ...state, stage: "repair", completedAt: null,
+    });
+    for (const evidence of [null, {}, { ...state.evidence, rows: [null] }, { ...state.evidence, reported: null }]) {
+      expect(restoreProgress(JSON.stringify({ ...state, evidence }))).toEqual({
+        ...state, evidence: null, stage: "investigate", completedAt: null,
+      });
+    }
+    expect(restoreProgress(JSON.stringify({ ...state, version: 99 }))).toEqual(initialProgress());
+  });
+  it("keeps incomplete guided edits instead of mistaking input validation for corrupt storage", () => {
+    const state = initialProgress();
+    state.rows[0].amount = "unfinished";
+    state.attempts = 4;
+    state.hints = 1;
+    expect(restoreProgress(JSON.stringify(state))).toEqual(state);
+  });
+
 });

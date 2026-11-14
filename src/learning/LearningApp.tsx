@@ -1,10 +1,13 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, BookOpen, Check, CheckCheck, ChevronRight, Clock3, Compass, FileCheck2, Flag, Layers3, Lightbulb, Menu, Target, TrendingUp, X } from "lucide-react";
 import { LanguageContext, LanguageSwitcher } from "../i18n";
-import { getSessionItem, setSessionItem } from "../session-storage";
-import { LESSONS, SKILLS, LEARNING_KEY, MAX_RESULTS, findLessonResult, beginLesson, nextLessonAttempt, saveLessonDraft, initialDraft, initialLearning, isLessonComplete, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
+import { configureSessionItem, getSessionItem, readSessionItem, setSessionItem, subscribe, subscribeSaveStatus } from "../session-storage";
+import { LESSONS, SKILLS, LEARNING_KEY, findLessonResult, setLearningGoal, beginLesson, nextLessonAttempt, saveLessonDraft, initialDraft, initialLearning, isLessonComplete, restoreLearning, recommendLesson, type Copy, type Lesson, type LessonDraft, type LearningState, type SkillId } from "./model";
+import { mergeLearning, mergeLearningJSON, prepareLessonInput, recordLessonResult } from "./persistence";
 import { LessonReview, Workspace } from "./Workspace";
 import "./learning.css";
+
+configureSessionItem(LEARNING_KEY, { version: 2, merge: mergeLearningJSON });
 
 const skillIcons = { revenue: FileCheck2, conversion: BarChart3, decisions: Target };
 
@@ -31,7 +34,7 @@ export function LearningApp() {
   const c = (en: string, ru: string) => language === "ru" ? ru : en;
   const tx = (copy: Copy) => copy[language];
   const [state, setState] = useState<LearningState>(() => {
-    try { return restoreLearning(getSessionItem(LEARNING_KEY)); } catch { return initialLearning(); }
+    try { return mergeLearning(initialLearning(), restoreLearning(getSessionItem(LEARNING_KEY))); } catch { return initialLearning(); }
   });
   const [hash, setHash] = useState(location.hash);
   const [menu, setMenu] = useState(false);
@@ -69,7 +72,17 @@ export function LearningApp() {
     return () => removeEventListener("hashchange", update);
   }, []);
   useEffect(() => {
-    try { setSessionItem(LEARNING_KEY, JSON.stringify(state)); setSaveError(false); }
+    const unsubscribe = subscribe(LEARNING_KEY, () => {
+      setState(previous => {
+        const next = mergeLearning(previous, restoreLearning(getSessionItem(LEARNING_KEY)));
+        return JSON.stringify(next) === JSON.stringify(previous) ? previous : next;
+      });
+    });
+    const unsubscribeStatus = subscribeSaveStatus(LEARNING_KEY, setSaveError);
+    return () => { unsubscribe(); unsubscribeStatus(); };
+  }, []);
+  useEffect(() => {
+    try { setSessionItem(LEARNING_KEY, JSON.stringify(state)); }
     catch { setSaveError(true); }
   }, [state]);
   useEffect(() => {
@@ -113,7 +126,7 @@ export function LearningApp() {
       </nav>
       <div className="learn-sidebar-label learn-path-label">{c("LEARNING PATH", "УЧЕБНЫЙ МАРШРУТ")}</div>
       <nav className="learn-skill-nav" aria-label={c("Skills", "Навыки")}>
-        {SKILLS.map(skill => { const Icon = skillIcons[skill.id]; const done = LESSONS.filter(lesson => lesson.skill === skill.id && completed.has(lesson.id)).length; return <button key={skill.id} className={activeSkill === skill.id || (isDashboard && state.goal === skill.id) ? "is-active" : ""} onClick={() => { setState(previous => ({ ...previous, goal: skill.id })); navigate("learn"); }}><Icon size={17} /><span>{tx(skill.title)}</span><small>{done}/2</small></button>; })}
+        {SKILLS.map(skill => { const Icon = skillIcons[skill.id]; const done = LESSONS.filter(lesson => lesson.skill === skill.id && completed.has(lesson.id)).length; return <button key={skill.id} className={activeSkill === skill.id || (isDashboard && state.goal === skill.id) ? "is-active" : ""} onClick={() => { setState(previous => setLearningGoal(previous, skill.id)); navigate("learn"); }}><Icon size={17} /><span>{tx(skill.title)}</span><small>{done}/2</small></button>; })}
       </nav>
       <div className="learn-sidebar-bottom"><div className="learn-small-spark"><Lightbulb size={20} /></div><strong>{c("A little practice. Every day.", "Немного практики. Каждый день.")}</strong><p>{c("One report, one insight, one step forward.", "Один отчёт, один новый навык, один шаг вперёд.")}</p><div className="learn-local-note"><span />{c("Progress saved on this device", "Прогресс на этом устройстве")}</div></div>
     </aside>
@@ -122,7 +135,7 @@ export function LearningApp() {
       <header className="learn-topbar"><div className="learn-topbar-left"><button className="learn-mobile-menu" aria-label={c("Toggle navigation", "Открыть меню")} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={20} /> : <Menu size={20} />}</button><span>{c("Workspace", "Личный кабинет")}</span><ChevronRight size={13} /><b>{isProgress ? c("Progress", "Прогресс") : activeLesson ? c("Practice", "Практика") : result ? c("Lesson review", "Разбор занятия") : c("Learning", "Обучение")}</b></div><div className="learn-topbar-right"><LanguageSwitcher /><div className="learn-profile"><span>{c("L", "У")}</span><div>{c("Your workspace", "Ваш кабинет")}<small>{c("Learning without an account", "Можно учиться без регистрации")}</small></div></div></div></header>
       <main className="learn-main" id="learning-main" ref={main} tabIndex={-1}>
         {saveError && <p className="learn-save-warning" role="status">{c("Browser storage is unavailable. Your progress stays in this tab until you close or reload it.", "Хранилище браузера недоступно. Прогресс сохранится только в этой вкладке до закрытия или перезагрузки.")}</p>}
-        {activeLesson ? <Workspace key={activeLesson.id} lesson={activeLesson} draft={state.drafts[activeLesson.id] ?? initialDraft(activeLesson.id, nextLessonAttempt(state, activeLesson.id))} onDraft={(draft: LessonDraft) => setState(previous => saveLessonDraft(previous, activeLesson.id, draft))} onComplete={submission => { setState(previous => { const drafts = { ...previous.drafts }; delete drafts[activeLesson.id]; return { ...previous, results: [...previous.results, submission].slice(-MAX_RESULTS), drafts }; }); navigate(`review/${submission.id}`); }} onExit={() => navigate("learn")} language={language} /> : result && reviewedLesson ? <LessonReview lesson={reviewedLesson} result={result} recommendation={recommended} onStart={start} onHome={() => navigate("learn")} language={language} /> : isProgress ? <>
+        {activeLesson ? <Workspace key={activeLesson.id} lesson={activeLesson} draft={state.drafts[activeLesson.id] ?? initialDraft(activeLesson.id, nextLessonAttempt(state, activeLesson.id))} onDraft={(draft: LessonDraft) => setState(previous => saveLessonDraft(previous, activeLesson.id, draft))} onPrepare={input => prepareLessonInput(mergeLearning(state, restoreLearning(readSessionItem(LEARNING_KEY))), input)} onComplete={submission => { const saved = restoreLearning(readSessionItem(LEARNING_KEY)); setState(previous => recordLessonResult(mergeLearning(previous, saved), submission)); navigate(`review/${submission.id}`); }} onExit={() => navigate("learn")} language={language} /> : result && reviewedLesson ? <LessonReview lesson={reviewedLesson} result={result} recommendation={recommended} onStart={start} onHome={() => navigate("learn")} language={language} /> : isProgress ? <>
           <div className="learn-page-heading"><div><p className="learn-eyebrow">{c("EVERY ATTEMPT COUNTS", "КАЖДАЯ ПОПЫТКА — ЭТО ОПЫТ")}</p><h1 tabIndex={-1}>{c("See how far you’ve come", "Ваш прогресс в деталях")}</h1><p>{c("Find your strengths and choose what to practice next.", "Посмотрите, что уже получается и чему уделить внимание.")}</p></div></div>
           <div className="learn-progress-summary"><div><span>{c("Completed lessons", "Пройдено занятий")}</span><strong>{completed.size}<small> / {LESSONS.length}</small></strong></div><div><span>{c("Total attempts", "Всего попыток")}</span><strong>{state.results.length}</strong></div><div><span>{c("Skills practiced", "Навыков в работе")}</span><strong>{SKILLS.filter(skill => skillScore(skill.id) !== undefined).length}<small> / 3</small></strong></div></div>
           <div className="learn-section-title"><h2>{c("Your skill map", "Ваша карта навыков")}</h2><span>{c("Latest attempt for each skill", "Последняя попытка по каждому навыку")}</span></div>
@@ -134,7 +147,7 @@ export function LearningApp() {
           <div className="learn-dashboard-grid"><div className="learn-dashboard-content">
             <section className="learn-feature"><div className="learn-feature-copy"><span className="learn-feature-kicker"><span />{state.results.length ? c("YOUR NEXT STEP", "ВАШ СЛЕДУЮЩИЙ ШАГ") : c("START WITH A SMALL WIN", "НАЧНИТЕ С МАЛЕНЬКОЙ ПОБЕДЫ")}</span><h2>{tx(nextLesson.title)}</h2><p>{tx(nextLesson.summary)}</p><div className="learn-feature-meta"><span><Clock3 size={15} />{nextLesson.minutes} {c("min", "мин")}</span><span><Layers3 size={15} />{c("Learn by doing", "Обучение на практике")}</span></div><button className="lr-btn-primary" onClick={() => start(nextLesson.id)}>{state.drafts[nextLesson.id] ? c("Continue learning", "Продолжить занятие") : c("Start learning", "Начать занятие")}<ArrowRight size={18} /></button></div><ReportIllustration language={language} /></section>
             {state.results.length > 0 && <p className="learn-recommendation-reason"><Lightbulb size={16} />{tx(recommended.reason)}</p>}
-            <section className="learn-curriculum" aria-labelledby="curriculum-heading"><div className="learn-section-title"><h2 id="curriculum-heading">{c("Your learning path", "Ваш учебный маршрут")}</h2><span>{c("6 lessons · 3 skills", "6 занятий · 3 навыка")}</span></div><div className="learn-filter" role="group" aria-label={c("Filter by skill", "Фильтр по навыку")}><button aria-pressed={state.goal === "all"} onClick={() => setState(previous => ({ ...previous, goal: "all" }))}>{c("All lessons", "Все занятия")}</button>{SKILLS.map(skill => <button key={skill.id} aria-pressed={state.goal === skill.id} onClick={() => setState(previous => ({ ...previous, goal: skill.id }))}>{tx(skill.title)}</button>)}</div><div className="learn-course-grid">{selectedLessons.map(lesson => <LessonCard key={lesson.id} lesson={lesson} language={language} index={LESSONS.indexOf(lesson)} score={latestFor(lesson.id)?.score} passed={completed.has(lesson.id)} draft={!!state.drafts[lesson.id]} onStart={() => start(lesson.id)} />)}</div></section>
+            <section className="learn-curriculum" aria-labelledby="curriculum-heading"><div className="learn-section-title"><h2 id="curriculum-heading">{c("Your learning path", "Ваш учебный маршрут")}</h2><span>{c("6 lessons · 3 skills", "6 занятий · 3 навыка")}</span></div><div className="learn-filter" role="group" aria-label={c("Filter by skill", "Фильтр по навыку")}><button aria-pressed={state.goal === "all"} onClick={() => setState(previous => setLearningGoal(previous, "all"))}>{c("All lessons", "Все занятия")}</button>{SKILLS.map(skill => <button key={skill.id} aria-pressed={state.goal === skill.id} onClick={() => setState(previous => setLearningGoal(previous, skill.id))}>{tx(skill.title)}</button>)}</div><div className="learn-course-grid">{selectedLessons.map(lesson => <LessonCard key={lesson.id} lesson={lesson} language={language} index={LESSONS.indexOf(lesson)} score={latestFor(lesson.id)?.score} passed={completed.has(lesson.id)} draft={!!state.drafts[lesson.id]} onStart={() => start(lesson.id)} />)}</div></section>
             <div className="learn-bottom-note"><span><BookOpen size={19} /></span><p>{c("Understanding comes from practice.", "Понимание приходит с практикой.")}<small>{c("Change the data. Check your assumptions. Take the skill with you.", "Меняйте данные. Проверяйте предположения. Применяйте навык в работе.")}</small></p></div>
           </div><aside className="learn-dashboard-aside">
             <section className="learn-progress-panel"><div className="learn-section-title"><h2>{c("Your progress", "Ваш прогресс")}</h2><TrendingUp size={18} /></div><div className="learn-progress-ring" style={{ "--progress": `${progress}%` } as React.CSSProperties}><div><strong>{completed.size}<small>/{LESSONS.length}</small></strong><span>{c("lessons completed", "занятий пройдено")}</span></div></div><h3>{completed.size === 0 ? c("Every skill starts somewhere", "Всё начинается с первого шага") : c("You’re building a habit", "Вы уже движетесь вперёд")}</h3><p>{completed.size === 0 ? c("Your first lesson takes less than 10 minutes. Let’s make it count.", "Первое занятие займёт меньше 10 минут. Давайте начнём.") : c("Come back to the skills that need a little more practice.", "Возвращайтесь к навыкам, которым нужно чуть больше практики.")}</p><button className="learn-text-button" onClick={() => navigate("progress")}>{c("View my progress", "Посмотреть прогресс")}<ArrowRight size={16} /></button></section>

@@ -384,7 +384,7 @@ describe("adaptive learning cases", () => {
     input.rows[0][2] = 999;
     expect(state.results[0].snapshot?.rows[0][2]).toBe(480);
     expect(restoreLearning(JSON.stringify(state))).toEqual(state);
-    for (const raw of ["{broken", "null", "{}", JSON.stringify({ ...state, version: 1 }), JSON.stringify({ ...state, results: {} })]) expect(restoreLearning(raw)).toEqual(initialLearning());
+    for (const raw of ["{broken", "null", "{}", JSON.stringify({ ...state, version: 3 }), JSON.stringify({ ...state, results: {} })]) expect(restoreLearning(raw)).toEqual(initialLearning());
     expect(restoreLearning(JSON.stringify({ ...state, results: [{ lessonId: "unknown", score: 100 }] })).results).toEqual([]);
   });
 });

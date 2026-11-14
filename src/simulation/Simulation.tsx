@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { Modal } from "../App";
 import { money, STATUSES, type Status } from "../model";
-import { getSessionItem, setSessionItem } from "../session-storage";
+import { configureSessionItem, getSessionItem, setSessionItem, subscribeSaveStatus } from "../session-storage";
 import type { Preview } from "./evaluate";
 import {
   CHANNELS,
@@ -138,6 +138,8 @@ function downloadReview(state: TrialState, result: Submission, t: Translate, err
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+configureSessionItem(TRIAL_KEY, { version: 1 });
+
 export function Simulation() {
   const t = useTranslation();
   const errorText = useErrorTranslation();
@@ -153,6 +155,7 @@ export function Simulation() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<FormulaIssue | null>(null);
   const [saveError, setSaveError] = useState(false);
+  useEffect(() => subscribeSaveStatus(TRIAL_KEY, setSaveError), []);
   const [dialog, setDialog] = useState<"help" | "restore" | "new" | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const taskHeading = useRef<HTMLHeadingElement>(null);
@@ -168,7 +171,6 @@ export function Simulation() {
   useEffect(() => {
     try {
       setSessionItem(TRIAL_KEY, JSON.stringify(state));
-      setSaveError(false);
     } catch {
       setSaveError(true);
     }

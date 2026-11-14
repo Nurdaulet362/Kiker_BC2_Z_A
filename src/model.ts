@@ -75,46 +75,46 @@ function isOrder(value: unknown): value is Order {
   );
 }
 
+function validSavedRows(value: unknown): value is Order[] {
+  return Array.isArray(value) && value.length <= 100 && value.every(isOrder);
+}
+
+function validSavedEvidence(value: unknown): value is Evidence {
+  if (!value || typeof value !== "object") return false;
+  const evidence = value as Evidence;
+  return Number.isFinite(evidence.reported) && Number.isFinite(evidence.expected)
+    && validSavedRows(evidence.rows) && validateRows(evidence.rows) === null;
+}
+
 export function restoreProgress(raw: string | null): Progress {
-  if (!raw) return initialProgress();
+  const initial = initialProgress();
+  if (!raw) return initial;
   try {
-    const state = JSON.parse(raw) as Progress;
-    const stages = ["investigate", "repair", "complete"];
-    if (
-      state.version !== 1 ||
-      !Array.isArray(state.rows) ||
-      state.rows.length > 100 ||
-      !state.rows.every(isOrder) ||
-      !stages.includes(state.stage) ||
-      typeof state.formula !== "string" ||
-      state.formula.length > 1000 ||
-      !Number.isInteger(state.hints) ||
-      state.hints < 0 ||
-      state.hints > 3 ||
-      !Number.isInteger(state.attempts) ||
-      state.attempts < 0
-    )
-      return initialProgress();
-    if (state.stage !== "investigate") {
-      const evidence = state.evidence;
-      if (
-        !evidence ||
-        !Number.isFinite(evidence.reported) ||
-        !Number.isFinite(evidence.expected) ||
-        !Array.isArray(evidence.rows) ||
-        !evidence.rows.every(isOrder)
-      )
-        return initialProgress();
-    }
-    if (
-      state.stage === "complete" &&
-      (typeof state.completedAt !== "string" ||
-        !Number.isFinite(Date.parse(state.completedAt)))
-    )
-      return initialProgress();
-    return state;
+    const state = JSON.parse(raw) as Progress | null;
+    if (!state || state.version !== 1) return initial;
+    const rowsValid = validSavedRows(state.rows);
+    const formulaValid = typeof state.formula === "string" && state.formula.length <= 1000;
+    const evidence = validSavedEvidence(state.evidence) ? state.evidence : null;
+    const completedAt = typeof state.completedAt === "string" && Number.isFinite(Date.parse(state.completedAt))
+      ? state.completedAt : null;
+    // Completion and repair depend on the current report and its recorded evidence.
+    // An unrelated broken counter must not discard those valid parts of the attempt.
+    const canResume = rowsValid && formulaValid && evidence !== null;
+    const stage: Stage = canResume && state.stage === "complete" && completedAt
+      ? "complete"
+      : canResume && (state.stage === "repair" || state.stage === "complete") ? "repair" : "investigate";
+    return {
+      version: 1,
+      rows: rowsValid ? state.rows : initial.rows,
+      formula: formulaValid ? state.formula : initial.formula,
+      stage,
+      evidence,
+      hints: Number.isInteger(state.hints) && state.hints >= 0 && state.hints <= 3 ? state.hints : 0,
+      attempts: Number.isSafeInteger(state.attempts) && state.attempts >= 0 ? state.attempts : 0,
+      completedAt: stage === "complete" ? completedAt : null,
+    };
   } catch {
-    return initialProgress();
+    return initial;
   }
 }
 

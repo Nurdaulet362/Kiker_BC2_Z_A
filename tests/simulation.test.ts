@@ -122,7 +122,6 @@ describe("sales operations work trial", () => {
     for (const raw of [
       "null",
       "{oops",
-      JSON.stringify({ ...state, answers: null }),
       JSON.stringify({ ...state, submissions: [{}] }),
       JSON.stringify({
         ...state,
@@ -130,6 +129,58 @@ describe("sales operations work trial", () => {
       }),
     ])
       expect(restoreTrial(raw)).toEqual(initialTrial());
+    expect(restoreTrial(JSON.stringify({ ...state, answers: null }))).toEqual({
+      ...initialTrial(), submissions: state.submissions,
+    });
+  });
+  it("keeps valid neighboring reviews when a submission or nested check is malformed", () => {
+    const state = initialTrial();
+    state.stage = "result";
+    state.startedAt = "2026-11-14T10:00:00.000Z";
+    state.answers = correct;
+    const first = { ...assess(state.scenario, correct, 30), at: "2026-11-14T10:00:30.000Z" };
+    const last = { ...assess(state.scenario, correct, 60), at: "2026-11-14T10:01:00.000Z" };
+    for (const broken of [
+      null, 42, {}, { ...first, at: "not-a-date" }, { ...first, snapshot: null },
+      { ...first, skills: null }, { ...first, skills: [null, ...first.skills.slice(1)] },
+      { ...first, skills: [{ ...first.skills[0], checks: [null] }, ...first.skills.slice(1)] },
+      { ...first, snapshot: { ...first.snapshot, scenario: { orders: [null], channels: null } } },
+    ]) {
+      const restored = restoreTrial(JSON.stringify({ ...state, submissions: [first, broken, last] }));
+      expect(restored.submissions).toEqual([first, last]);
+      expect(restored.stage).toBe("result");
+      expect(restored.scenario).toEqual(state.scenario);
+      expect(restored.answers).toEqual(correct);
+    }
+  });
+  it("resets a broken current trial while retaining independently valid history", () => {
+    const state = initialTrial();
+    state.stage = "work";
+    state.startedAt = "2026-11-14T10:00:00.000Z";
+    state.submissions = [assess(state.scenario, correct, 30)];
+    for (const brokenDraft of [
+      { scenario: null },
+      { scenario: { ...state.scenario, orders: [null] } },
+      { scenario: { ...state.scenario, channels: null } },
+      { answers: null }, { hints: null }, { active: "unknown" },
+      { stage: "unknown" }, { startedAt: "not-a-date" },
+    ]) {
+      expect(restoreTrial(JSON.stringify({ ...state, ...brokenDraft }))).toEqual({
+        ...initialTrial(), submissions: state.submissions,
+      });
+    }
+    expect(restoreTrial(JSON.stringify({ ...state, version: 99 }))).toEqual(initialTrial());
+  });
+  it("bounds recovered trial history after filtering and preserves unfinished numeric edits", () => {
+    const state = initialTrial();
+    state.stage = "work";
+    state.startedAt = "2026-11-14T10:00:00.000Z";
+    const result = assess(state.scenario, correct, 30);
+    const submissions = Array.from({ length: 51 }, (_, index) => ({ ...result, seconds: index }));
+    const restored = restoreTrial(JSON.stringify({ ...state, submissions: [null, ...submissions] }));
+    expect(restored.submissions).toEqual(submissions.slice(-50));
+    state.scenario.orders[0].amount = "unfinished";
+    expect(restoreTrial(JSON.stringify(state))).toEqual(state);
   });
   it("reads legacy Neither answers from both the saved draft and submission snapshot", () => {
     const state = initialTrial();

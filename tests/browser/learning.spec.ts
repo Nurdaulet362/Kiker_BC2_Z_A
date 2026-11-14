@@ -189,7 +189,7 @@ test("a saved draft keeps its seed beyond the hundred-result history limit", asy
   await expect.poll(ids).toEqual(shuffleOptions(cancelled.diagnosis, `${cancelled.id}:122:diagnosis`).map(option => option.id));
 });
 
-test("lesson review uses persisted score components and supports older reviews without them", async ({ page }) => {
+test("lesson review uses persisted score components and supports older reviews without them", async ({ page, browser }) => {
   await page.addInitScript(() => {
     const result = {
       lessonId: "revenue-cancelled", score: 80,
@@ -205,13 +205,18 @@ test("lesson review uses persisted score components and supports older reviews w
   });
   await page.goto("/#review/2026-11-14T10:00:00.000Z");
   await expect(page.locator(".lr-review-item-top > span")).toHaveText(["15 / 20", "40 / 50", "25 / 30"]);
-  await page.evaluate(() => {
+  const legacyState = await page.evaluate(() => {
     const state = JSON.parse(localStorage.getItem("fix-the-report.learning.v2")!);
     delete state.results[0].breakdown;
-    localStorage.setItem("fix-the-report.learning.v2", JSON.stringify(state));
+    return state;
   });
-  await page.reload();
-  await expect(page.locator(".lr-review-item-top > span")).toHaveText(["20 / 20", "30 / 50", "30 / 30"]);
+  // A fresh browser has no richer copy to reconcile into this legacy fixture.
+  const legacyContext = await browser.newContext();
+  await legacyContext.addInitScript(state => localStorage.setItem("fix-the-report.learning.v2", JSON.stringify(state)), legacyState);
+  const legacyPage = await legacyContext.newPage();
+  await legacyPage.goto(new URL("/#review/2026-11-14T10:00:00.000Z", page.url()).href);
+  await expect(legacyPage.locator(".lr-review-item-top > span")).toHaveText(["20 / 20", "30 / 50", "30 / 30"]);
+  await legacyContext.close();
 });
 
 test("a complete Russian lesson saves its review and starts the recommended case", async ({ page }) => {

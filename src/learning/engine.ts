@@ -81,6 +81,7 @@ export function evaluateLesson(input: LessonInput): LessonResult {
   const invalid = validateLessonRows(lesson, input.rows);
   if (invalid) throw new Error(invalid);
   if (typeof input.formula !== "string" || input.formula.length > 1000) throw new FormulaWorkerError("length");
+  if (input.attempt !== undefined && (!Number.isSafeInteger(input.attempt) || input.attempt < 1)) throw new Error("Invalid attempt number.");
   const hintLevel = input.hintLevel ?? 0;
   if (![0, 1, 2, 3].includes(hintLevel)) throw new Error("Invalid hint level.");
   const solutionRevealed = hintLevel === 3;
@@ -112,6 +113,7 @@ export function evaluateLesson(input: LessonInput): LessonResult {
   const score = breakdown.diagnosis + breakdown.repair + breakdown.transfer;
   return {
     id: createResultId(),
+    ...(input.attempt !== undefined ? { attempt: input.attempt } : {}),
     hintLevel,
     solutionRevealed,
     lessonId: lesson.id,
