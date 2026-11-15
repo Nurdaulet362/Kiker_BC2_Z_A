@@ -306,7 +306,7 @@
   "Keep my edits": "Оставить мои правки",
   "Restore data": "Восстановить данные",
   "Try it without the same answers": "Попробовать другие данные",
-  "The next assignment changes amounts, lead counts and channel costs. It starts a fresh review history. Download your current review first if you want to keep it.": "В новом задании изменятся суммы, число лидов и расходы по каналам. История проверок начнётся заново. Скачайте текущий разбор, если хотите его сохранить.",
+  "The next assignment changes amounts, lead counts and channel costs. Download your current review before switching if you want to keep a copy.": "В новом задании изменятся суммы, число лидов и расходы по каналам. Перед переходом скачайте текущий разбор, если хотите оставить копию.",
   "Keep this review": "Остаться в разборе",
   "Start fresh assignment": "Начать новое задание",
   "First case ready for review": "Первый кейс готов к проверке",

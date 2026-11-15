@@ -37,6 +37,10 @@ export type SkillResult = {
   checks: TrialCheck[];
 };
 export type Submission = {
+  // Optional for version-1 reviews saved before cross-tab synchronization.
+  id?: string;
+  generation?: number;
+  recordedAt?: string;
   score: number;
   skills: SkillResult[];
   at: string;
@@ -46,6 +50,8 @@ export type Submission = {
 };
 export type TrialState = {
   version: 1;
+  generation?: number;
+  updatedAt?: string;
   stage: "home" | "work" | "result";
   scenario: Scenario;
   answers: Answers;
@@ -242,7 +248,10 @@ function validSavedHints(hints: unknown): hints is string[] {
 function validSavedSubmission(value: unknown): value is Submission {
   if (!value || typeof value !== "object") return false;
   const result = value as Submission;
-  return Number.isFinite(result.score) && result.score >= 0 && result.score <= 100
+  return (result.id === undefined || (typeof result.id === "string" && /^[A-Za-z0-9_.:-]{1,200}$/.test(result.id)))
+    && (result.generation === undefined || (Number.isSafeInteger(result.generation) && result.generation >= 0))
+    && (result.recordedAt === undefined || (typeof result.recordedAt === "string" && result.recordedAt.length <= 40 && Number.isFinite(Date.parse(result.recordedAt))))
+    && Number.isFinite(result.score) && result.score >= 0 && result.score <= 100
     && Number.isFinite(result.seconds)
     && typeof result.at === "string" && Number.isFinite(Date.parse(result.at))
     && (result.snapshot === undefined || (
@@ -279,7 +288,11 @@ export function restoreTrial(raw: string | null): TrialState {
     if (state.stage !== "home" && (typeof state.startedAt !== "string"
       || !Number.isFinite(Date.parse(state.startedAt)))) return recovered;
     if (state.stage === "result" && submissions.length === 0) return recovered;
-    return { ...state, submissions };
+    const { generation, updatedAt, ...legacy } = state;
+    return { ...legacy, submissions,
+      ...(Number.isSafeInteger(generation) && generation! >= 0 ? { generation } : {}),
+      ...(typeof updatedAt === "string" && updatedAt.length <= 40 && Number.isFinite(Date.parse(updatedAt)) ? { updatedAt } : {}),
+    };
   } catch {
     return initial;
   }

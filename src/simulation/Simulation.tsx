@@ -31,7 +31,8 @@ import {
 } from "lucide-react";
 import { Modal } from "../App";
 import { money, STATUSES, type Status } from "../model";
-import { configureSessionItem, getSessionItem, setSessionItem, subscribeSaveStatus, type SaveStatus } from "../session-storage";
+import { configureSessionItem, getSessionItem, setSessionItem, subscribe, subscribeSaveStatus, type SaveStatus } from "../session-storage";
+import { completedTrial, currentTrialSubmissions, editTrial, freshTrial, mergeTrial, mergeTrialJSON } from "./persistence";
 import type { Preview } from "./evaluate";
 import {
   CHANNELS,
@@ -89,7 +90,7 @@ function downloadReview(state: TrialState, result: Submission, t: Translate, err
     "",
     t("Score: {score}/100", { score: result.score }),
     t("Submitted: {at}", { at: result.at }),
-    t("Attempts: {n}", { n: state.submissions.length }),
+    t("Attempts: {n}", { n: currentTrialSubmissions(state).length }),
     t("Hints used: {n}", {
       n: snapshot
         ? snapshot.hints.length
@@ -140,15 +141,16 @@ function downloadReview(state: TrialState, result: Submission, t: Translate, err
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-configureSessionItem(TRIAL_KEY, { version: 1 });
+configureSessionItem(TRIAL_KEY, { version: 1, merge: mergeTrialJSON });
 
 export function Simulation() {
   const t = useTranslation();
   const { language } = useContext(LanguageContext);
   const errorText = useErrorTranslation();
-  const [state, setState] = useState<TrialState>(() => {
+  const [state, replaceState] = useState<TrialState>(() => {
     try {
-      return restoreTrial(getSessionItem(TRIAL_KEY));
+      const saved = restoreTrial(getSessionItem(TRIAL_KEY));
+      return mergeTrial(saved, saved);
     } catch {
       return initialTrial();
     }
@@ -159,6 +161,16 @@ export function Simulation() {
   const [error, setError] = useState<FormulaIssue | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("ok");
   useEffect(() => subscribeSaveStatus(TRIAL_KEY, setSaveStatus), []);
+  useEffect(() => subscribe(TRIAL_KEY, () => {
+    const saved = restoreTrial(getSessionItem(TRIAL_KEY));
+    replaceState(previous => {
+      const merged = mergeTrial(previous, saved);
+      return JSON.stringify(merged) === JSON.stringify(previous) ? previous : merged;
+    });
+  }), []);
+  function setState(change: TrialState | ((previous: TrialState) => TrialState)) {
+    replaceState(previous => editTrial(previous, typeof change === "function" ? change(previous) : change));
+  }
   const [dialog, setDialog] = useState<"help" | "restore" | "new" | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const taskHeading = useRef<HTMLHeadingElement>(null);
@@ -168,7 +180,8 @@ export function Simulation() {
   const { scenario, answers, active, stage } = state;
   const metrics = channelMetrics(scenario);
   const rowError = validateScenario(scenario);
-  const latest = state.submissions.at(-1);
+  const currentSubmissions = currentTrialSubmissions(state);
+  const latest = currentSubmissions.at(-1);
   const taskResult = latest?.skills.find((s) => s.id === active);
 
   useEffect(() => {
@@ -253,8 +266,7 @@ export function Simulation() {
     }));
   }
   function fresh() {
-    const next = initialTrial((state.scenario.seed + 1) % 1000000);
-    setState({ ...next, stage: "work", startedAt: new Date().toISOString() });
+    setState(previous => freshTrial(previous));
     setDialog(null);
     setError(null);
     setPreview(null);
@@ -265,6 +277,7 @@ export function Simulation() {
     setError(null);
     const controller = new AbortController();
     assessment.current = controller;
+    const submittedAt = editTrial(state, state).updatedAt!;
     try {
       const seconds = Math.max(
         0,
@@ -277,12 +290,10 @@ export function Simulation() {
         seconds,
         controller.signal,
       );
-      if (result.snapshot) result.snapshot.hints = [...state.hints];
-      setState((s) => ({
-        ...s,
-        stage: "result",
-        submissions: [...s.submissions.slice(-49), result],
-      }));
+      // The response belongs to the submitted assignment even if another tab
+      // starts the next one while its worker is still calculating.
+      const completed = completedTrial(state, result, submittedAt);
+      replaceState(previous => mergeTrial(previous, completed));
     } catch (e) {
       if (e instanceof Error && e.name !== "AbortError") setError(formulaIssue(e));
     } finally {
@@ -1252,10 +1263,10 @@ export function Simulation() {
               <div className="sim-review-meta">
                 <span>
                   {t(
-                    state.submissions.length === 1
+                    currentSubmissions.length === 1
                       ? "{n} submission"
                       : "{n} submissions",
-                    { n: state.submissions.length },
+                    { n: currentSubmissions.length },
                   )}
                 </span>
                 <span>
@@ -1268,10 +1279,10 @@ export function Simulation() {
                       )
                     : t("Hints not recorded in this older review")}
                 </span>
-                {state.submissions.length > 1 && (
+                {currentSubmissions.length > 1 && (
                   <span>
                     {t("First submission: {score}/100", {
-                      score: state.submissions[0].score,
+                      score: currentSubmissions[0].score,
                     })}
                   </span>
                 )}
@@ -1447,7 +1458,7 @@ export function Simulation() {
         >
           <p>
             {t(
-              "The next assignment changes amounts, lead counts and channel costs. It starts a fresh review history. Download your current review first if you want to keep it.",
+              "The next assignment changes amounts, lead counts and channel costs. Download your current review before switching if you want to keep a copy.",
             )}{" "}
           </p>
           <div className="modal-actions">
