@@ -8,7 +8,7 @@ English is the default, regardless of browser language. The EN/RU switch saves y
 
 **[Open the public demo](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site)** · **[Source on GitHub](https://github.com/Nurdaulet362/Kiker_BC2_Z_A)**
 
-The published demo opens all six lessons and Work Trial with the persistent **Demo access — not a purchase** banner. Payments remain disconnected.
+The published demo opens all six lessons and Work Trial with the persistent **Demo access — not a purchase** banner. Payments remain disconnected. The repository also contains later audit fixes; the public demo has not been redeployed with those fixes. See the [audit fixes report](docs/AUDIT_FIXES_REPORT.md).
 
 ## Run locally
 
@@ -80,9 +80,11 @@ Work Trial combines revenue, conversion and a channel decision, with 30 checks a
 
 ## Verification
 
+The subsequent audit fixes at code commit `789a9a6` passed **310 unit tests and 91 Chromium e2e tests in each mode**, TypeScript and both production builds in a clean local clone. No existing tests were removed; the checks added 68 unit tests and 19 e2e tests. See the [audit fixes report](docs/AUDIT_FIXES_REPORT.md) for commands, failures during development and remaining limits. These checks do not claim that the public demo has been redeployed.
+
 The sprint closed at code commit `01302ea` with **242 unit tests and 72 Chromium e2e tests passing in each mode**. The [task 4 report](docs/SPRINT_TASK_4_REPORT.md) records those runs, the initial failed fixture and its correction. A separate [clean-clone release check](docs/submission/RELEASE_CHECK.md) records the later verification of the frozen code.
 
-A fresh unauthenticated clone of public GitHub `main` at [`a7ea438`](https://github.com/Nurdaulet362/Kiker_BC2_Z_A/commit/a7ea43838159c2dde91d43d1dbb86e8e2e2b820a) passed `npm ci`, TypeScript, **242 unit tests in each mode**, and both production builds. Application code remains identical to frozen `01302ea`. The published demo separately passed **72/72 Chromium e2e tests** on its first run, with no failures, skips or flaky tests. See the [public release verification](docs/submission/PUBLIC_RELEASE.md) for commands, timings and deployment checks.
+A fresh unauthenticated clone of public GitHub `main` at [`a7ea438`](https://github.com/Nurdaulet362/Kiker_BC2_Z_A/commit/a7ea43838159c2dde91d43d1dbb86e8e2e2b820a) passed `npm ci`, TypeScript, **242 unit tests in each mode**, and both production builds. That public release used application code identical to frozen `01302ea`. The published demo separately passed **72/72 Chromium e2e tests** on its first run, with no failures, skips or flaky tests. See the [public release verification](docs/submission/PUBLIC_RELEASE.md) for those historical commands, timings and deployment checks.
 
 Install dependencies once, then check normal mode:
 
@@ -130,6 +132,6 @@ The project is intended to fit a consumer learning-product direction. It does no
 
 ## Implementation and documentation
 
-React 19, TypeScript, Vite, Vitest and Playwright. Formulas run in Web Workers with timeouts and an explicit allowlist using `fast-formula-parser@1.0.19`. `SUMIFS` and `COUNTIFS` use the library's custom-function mechanism and reuse its criteria matching. Arbitrary JavaScript evaluation is not used.
+React 19, TypeScript, Vite, Vitest and Playwright. Formulas run in Web Workers with timeouts and an explicit allowlist using `fast-formula-parser@1.0.19`. `SUMIFS` and `COUNTIFS` use the library's custom-function mechanism and reuse its criteria matching. `MIN`, `MAX` and `COUNTA` use the same extension mechanism and the library's argument helpers. Arbitrary JavaScript evaluation is not used.
 
-See the [technical handoff](docs/PROJECT_HANDOFF.md) for architecture, storage contracts and formula limitations, and [build modes](docs/BUILD_MODES.md) for commands. Local developer skills, design-tool state and selected internal plans are excluded from the public source tree and are not needed to install, test or build the app. Older retained reports describe historical states; this README and the final sprint reports describe the frozen release.
+See the [technical handoff](docs/PROJECT_HANDOFF.md) for architecture, storage contracts and formula limitations, and [build modes](docs/BUILD_MODES.md) for commands. Local developer skills, design-tool state and selected internal plans are excluded from the public source tree and are not needed to install, test or build the app. Older retained reports describe historical states; the [audit fixes report](docs/AUDIT_FIXES_REPORT.md) covers the subsequent corrections.
