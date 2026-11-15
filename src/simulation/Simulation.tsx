@@ -713,7 +713,7 @@ export function Simulation() {
                         </p>
                       )}
                     </div>
-                    <div className="sim-table-scroll">
+                    <div className="sim-table-scroll" tabIndex={0} role="region" aria-label={t("Orders table, scroll horizontally if needed")}>
                       <table className="sim-orders">
                         <caption>
                           {t(
@@ -881,7 +881,7 @@ export function Simulation() {
                         </p>
                       )}
                     </div>
-                    <div className="sim-table-scroll">
+                    <div className="sim-table-scroll" tabIndex={0} role="region" aria-label={t("Acquisition table, scroll horizontally if needed")}>
                       <table className="sim-channels">
                         <caption>
                           {t(
@@ -936,7 +936,7 @@ export function Simulation() {
                         "The draft recommends Ads because it brought more paid orders. Use the corrected source data to decide whether that recommendation holds up.",
                       )}{" "}
                     </p>
-                    <div className="sim-table-scroll">
+                    <div className="sim-table-scroll" tabIndex={0} role="region" aria-label={t("Channel economics table, scroll horizontally if needed")}>
                       <table className="sim-economics">
                         <caption>
                           {t(

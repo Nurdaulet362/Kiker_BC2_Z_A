@@ -47,6 +47,14 @@ function text(language: Language, en: string, ru: string) {
   return language === "ru" ? ru : en;
 }
 
+const validationMessages = {
+  diagnosis: { en: "Choose the cause of the error first.", ru: "Сначала выберите причину ошибки в отчёте." },
+  formula: { en: "Write a formula before checking your solution.", ru: "Введите формулу перед проверкой решения." },
+  decision: { en: "Choose your recommendation before checking.", ru: "Выберите рекомендацию перед проверкой." },
+  transfer: { en: "Choose an answer to the new situation.", ru: "Выберите ответ для новой ситуации." },
+} satisfies Record<string, Copy>;
+type WorkspaceError = FormulaIssue | { validation: keyof typeof validationMessages };
+
 export function readableError(input: string | FormulaIssue, language: Language) {
   const issue = typeof input === "string" ? { error: input } : input;
   if (issue.code) return localizeFormulaError(issue, language);
@@ -96,7 +104,10 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onPrepare, onExi
   const [preview, setPreview] = useState<{ value?: number | string; error?: string; code?: FormulaIssue["code"]; params?: FormulaIssue["params"] } | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | FormulaIssue>("");
+  const [error, setError] = useState<WorkspaceError | null>(null);
+  const errorText = error && ("validation" in error
+    ? validationMessages[error.validation][language]
+    : readableError(error, language));
   const [repairReview, setRepairReview] = useState<LessonResult | null>(null);
   const [confirmSolution, setConfirmSolution] = useState(false);
   const [cellEdits, setCellEdits] = useState<Record<string, string>>({});
@@ -110,7 +121,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onPrepare, onExi
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "instant" });
-    setError("");
+    setError(null);
   }, [draft.step, lesson.id]);
 
   useEffect(() => () => { activeRequest.current?.abort(); }, []);
@@ -142,7 +153,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onPrepare, onExi
     activeRequest.current?.abort();
     requestId.current += 1;
     setBusy(false);
-    setError("");
+    setError(null);
     setRepairReview(null);
     onDraft({ ...draft, ...patch });
   }
@@ -166,22 +177,22 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onPrepare, onExi
   }
 
   async function assess(complete: boolean) {
-    setError("");
-    if (rowsError) { setError(readableError(rowsError, language)); return; }
+    setError(null);
+    if (rowsError) { setError({ error: rowsError }); return; }
     if (!draft.diagnosis) {
-      setError(tr("Choose the cause of the error first.", "Сначала выберите причину ошибки в отчёте."));
+      setError({ validation: "diagnosis" });
       return;
     }
     if (lesson.kind === "formula" && !draft.formula.trim()) {
-      setError(tr("Write a formula before checking your solution.", "Введите формулу перед проверкой решения."));
+      setError({ validation: "formula" });
       return;
     }
     if (lesson.kind === "decision" && !draft.decision) {
-      setError(tr("Choose your recommendation before checking.", "Выберите рекомендацию перед проверкой."));
+      setError({ validation: "decision" });
       return;
     }
     if (complete && !draft.transfer) {
-      setError(tr("Choose an answer to the new situation.", "Выберите ответ для новой ситуации."));
+      setError({ validation: "transfer" });
       return;
     }
     activeRequest.current?.abort();
@@ -281,7 +292,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onPrepare, onExi
           <section className="lr-answer-panel" aria-label={tr("Your solution", "Ваше решение")}>
             <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">1</span>{tr("What was wrong with the original report?", "В чём ошибка исходного отчёта?")}</legend>{diagnosisOptions.map((option) => <Choice key={option.id} name="diagnosis" id={option.id} selected={draft.diagnosis} onChange={(diagnosis) => updateDraft({ diagnosis })}>{option.label[language]}</Choice>)}</fieldset>
             {lesson.kind === "formula" ? <div className="lr-formula-field"><label htmlFor="lr-formula"><span className="lr-question-number" aria-hidden="true">2</span>{tr("Your formula", "Ваша формула")}</label><p>{tr("The current formula contains an error. Edit it below.", "В текущей формуле есть ошибка. Исправьте её ниже.")}</p><div className="lr-formula-editor"><span aria-hidden="true">ƒx</span><textarea id="lr-formula" rows={3} value={draft.formula} maxLength={1000} spellCheck={false} onChange={(e) => updateDraft({ formula: e.target.value })} aria-describedby="lr-formula-help" /></div><p id="lr-formula-help" className="lr-field-help">{tr('Use English functions and status values ("Paid"), with commas. Rows 2–101 are available.', 'Названия функций и статусы ("Paid") — на английском, разделитель — запятая. Доступны строки 2–101.')}</p><div className="lr-output" role="status" aria-live="polite"><span>{tr("Your formula returns", "По вашей формуле")}</span>{calculating ? <span className="lr-calculating"><LoaderCircle size={17} className="lr-spin" />{tr("Calculating…", "Считаем…")}</span> : preview?.error ? <span className="lr-output-error">{readableError({ ...preview, error: preview.error }, language)}</span> : <strong>{preview?.value !== undefined ? formatLessonValue(preview.value, lesson.format, language) : "—"}</strong>}</div></div> : <fieldset className="lr-question"><legend><span className="lr-question-number" aria-hidden="true">2</span>{tr("What would you recommend?", "Что вы порекомендуете?")}</legend>{lesson.decisionOptions?.map((option) => <Choice key={option.id} name="decision" id={option.id} selected={draft.decision} onChange={(decision) => updateDraft({ decision })}>{option.label[language]}</Choice>)}</fieldset>}
-            {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{typeof error === "string" ? error : readableError(error, language)}</p>}
+            {errorText && <p className="lr-alert" role="alert"><CircleAlert size={17} />{errorText}</p>}
             {repairReview && <div className={`lr-inline-feedback${repairReview.repairPassed && repairReview.diagnosisPassed ? " is-success" : " is-review"}`} role="status"><span>{repairReview.repairPassed && repairReview.diagnosisPassed ? <CheckCheck size={21} /> : <CircleAlert size={21} />}</span><div><strong>{repairReview.repairPassed && repairReview.diagnosisPassed ? tr("Your solution holds up", "Решение выдержало проверку") : tr("There is still something to explore", "Есть над чем поработать")}</strong><p>{repairReview.repairPassed ? (lesson.kind === "decision" ? tr("Your recommendation follows the current data.", "Рекомендация соответствует текущим данным.") : tr("The calculation works on the test data.", "Расчёт работает на проверочных данных.")) : tr(`${repairReview.checks.filter((check) => check.passed).length} of ${repairReview.checks.length} checks passed. Try the hint and check again, or continue to the review.`, `Пройдено ${repairReview.checks.filter((check) => check.passed).length} из ${repairReview.checks.length} проверок. Можно открыть подсказку и повторить проверку или продолжить до разбора.`)}</p>{!repairReview.diagnosisPassed && <p>{tr("Reconsider the cause you selected.", "Проверьте выбранную причину ошибки.")}</p>}</div></div>}
             <button type="button" className="lr-btn-secondary lr-check-button" onClick={() => void assess(false)} disabled={busy}>{busy ? <LoaderCircle size={17} className="lr-spin" /> : <CheckCheck size={18} />}{busy ? tr("Checking…", "Проверяем…") : tr("Check solution", "Проверить решение")}</button>
           </section>
@@ -294,7 +305,7 @@ export function Workspace({ lesson, draft, onDraft, onComplete, onPrepare, onExi
           <span className="lr-transfer-icon"><Target size={30} /></span><p className="lr-eyebrow">{tr("One more step", "Ещё один шаг")}</p>
           <fieldset className="lr-question lr-transfer-question"><legend>{lesson.transfer.prompt[language]}</legend>{transferOptions.map((option) => <Choice key={option.id} name="transfer" id={option.id} selected={draft.transfer} onChange={(transfer) => updateDraft({ transfer })}>{option.label[language]}</Choice>)}</fieldset>
           <p className="lr-transfer-note">{tr("This uses new data. Think about the rule, not the number you saw earlier.", "Здесь другие данные. Вспомните правило, а не число из предыдущего отчёта.")}</p>
-          {error && <p className="lr-alert" role="alert"><CircleAlert size={17} />{typeof error === "string" ? error : readableError(error, language)}</p>}
+          {errorText && <p className="lr-alert" role="alert"><CircleAlert size={17} />{errorText}</p>}
         </section>
         <div className="lr-work-footer"><button className="lr-btn-quiet" type="button" onClick={() => updateDraft({ step: 1 })}><ArrowLeft size={16} />{tr("Back to the report", "Вернуться к отчёту")}</button><button className="lr-btn-primary" type="button" onClick={() => void assess(true)} disabled={busy}>{busy ? <LoaderCircle size={18} className="lr-spin" /> : <Check size={18} />}{busy ? tr("Preparing your review…", "Готовим разбор…") : tr("Finish lesson", "Завершить задание")}</button></div>
       </>}

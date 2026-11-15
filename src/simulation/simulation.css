@@ -662,6 +662,10 @@
   max-height: 388px;
   scrollbar-gutter: stable;
 }
+.sim-table-scroll:focus-visible {
+  outline: 3px solid var(--purple-dark);
+  outline-offset: 3px;
+}
 .sim-table-scroll table {
   width: 100%;
   table-layout: auto;

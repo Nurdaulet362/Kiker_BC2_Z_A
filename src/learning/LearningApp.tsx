@@ -182,8 +182,12 @@ export function LearningApp() {
 
 function LessonCard({ lesson, language, index, score, passed, draft, onStart }: { lesson: Lesson; language: "en" | "ru"; index: number; score?: number; passed: boolean; draft: boolean; onStart: () => void }) {
   const c = (en: string, ru: string) => language === "ru" ? ru : en;
+  const action = !canAccessLesson(lesson.level) ? c("View Pro plan", "Посмотреть тариф Pro")
+    : score !== undefined ? c("Practice again", "Повторить")
+    : draft ? c("Continue lesson", "Продолжить")
+    : c("Start lesson", "Начать занятие");
   return <article className={`learn-course learn-course-${lesson.skill}`}>
     <div className="learn-course-top"><span className="learn-course-number">{String(index + 1).padStart(2, "0")}</span><SkillArt skill={lesson.skill} /><span className="learn-course-level">{lesson.level === "practice" && "Pro · "}{passed ? <><Check size={12} />{c("Completed", "Пройдено")}</> : score !== undefined ? c("Keep practicing", "Закрепите навык") : lesson.level === "foundation" ? c("Foundation", "Основы") : c("Practice", "Закрепление")}</span></div>
-    <div className="learn-course-content"><h3>{lesson.title[language]}</h3><p>{lesson.summary[language]}</p><div className="learn-course-meta"><span><Clock3 size={14} />{lesson.minutes} {c("min", "мин")}</span><span>{score !== undefined ? `${score}/100` : lesson.kind === "formula" ? c("Spreadsheet practice", "Работа с таблицей") : c("Decision practice", "Принятие решений")}</span></div><button onClick={onStart} data-testid={`lesson-${lesson.id}`} aria-label={`${!canAccessLesson(lesson.level) ? c("View Pro plan", "Посмотреть тариф Pro") : c("Start", "Начать")}: ${lesson.title[language]}`}>{!canAccessLesson(lesson.level) ? c("View Pro plan", "Посмотреть тариф Pro") : score !== undefined ? c("Practice again", "Повторить") : draft ? c("Continue lesson", "Продолжить") : c("Start lesson", "Начать занятие")}<ArrowUpRight size={17} /></button></div>
+    <div className="learn-course-content"><h3>{lesson.title[language]}</h3><p>{lesson.summary[language]}</p><div className="learn-course-meta"><span><Clock3 size={14} />{lesson.minutes} {c("min", "мин")}</span><span>{score !== undefined ? `${score}/100` : lesson.kind === "formula" ? c("Spreadsheet practice", "Работа с таблицей") : c("Decision practice", "Принятие решений")}</span></div><button onClick={onStart} data-testid={`lesson-${lesson.id}`} aria-label={`${action}: ${lesson.title[language]}`}>{action}<ArrowUpRight size={17} /></button></div>
   </article>;
 }
