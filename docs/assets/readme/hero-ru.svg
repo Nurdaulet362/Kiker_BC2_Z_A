@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="450" viewBox="0 0 1200 450" role="img" aria-labelledby="hero-title hero-desc" lang="ru">
+  <title id="hero-title">Fix the Report — найди ошибку, исправь правило</title>
+  <desc id="hero-desc">Схема вымышленного учебного примера. В отчёте выручка 2030 долларов, но оплаченные заказы дают 1200 долларов. Завышение на 830 долларов — это отменённый заказ на 650 долларов и заказ в ожидании оплаты на 180 долларов.</desc>
+  <rect width="1200" height="450" rx="24" fill="#F7F5F1"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="50" y="40" width="36" height="36" rx="10" fill="#BC4933"/>
+    <path d="M59 64V57M67 64V50M75 64V46" stroke="#FFF" stroke-width="4" stroke-linecap="round"/>
+    <text x="100" y="65" font-size="23" font-weight="700" fill="#263342">Fix the Report</text>
+    <text x="52" y="130" font-size="12" font-weight="700" letter-spacing="1.5" fill="#BC4933">ПРАКТИКА РАБОТЫ С ТАБЛИЦАМИ</text>
+    <text x="50" y="194" font-size="47" font-weight="700" letter-spacing="-1.4" fill="#263342">Найди ошибку.</text>
+    <text x="50" y="251" font-size="47" font-weight="700" letter-spacing="-1.4" fill="#263342">Исправь правило.</text>
+    <text x="52" y="293" font-size="18" fill="#63717B">Разбирайся в логике, которая стоит за числами.</text>
+    <path d="M52 332H552" stroke="#DDDCD7"/>
+    <circle cx="61" cy="371" r="10" fill="#E9F1E8"/>
+    <path d="M57 371l3 3 5-6" fill="none" stroke="#526C58" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="80" y="377" font-size="17" font-weight="700" fill="#526C58">Найти</text>
+    <path d="M179 371h25m-5-5 5 5-5 5" fill="none" stroke="#A0A8AC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="225" y="377" font-size="17" font-weight="700" fill="#526C58">Исправить</text>
+    <path d="M338 371h25m-5-5 5 5-5 5" fill="none" stroke="#A0A8AC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="384" y="377" font-size="17" font-weight="700" fill="#526C58">Проверить</text>
+
+    <rect x="608" y="47" width="540" height="340" rx="22" fill="#FFF" stroke="#DDDCD7"/>
+    <text x="638" y="91" font-size="23" font-weight="700" fill="#263342">Один отчёт. Два результата.</text>
+    <path d="M638 113h480" stroke="#E9E7E2"/>
+    <text x="638" y="151" font-size="11" letter-spacing="0.5" font-weight="700" fill="#63717B">ВЫРУЧКА В ОТЧЁТЕ</text>
+    <text x="638" y="202" font-size="43" font-weight="700" letter-spacing="-1" fill="#BC4933">$2 030</text>
+    <path d="M843 181h35m-8-8 8 8-8 8" fill="none" stroke="#A0A8AC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="923" y="151" font-size="11" letter-spacing="0.5" font-weight="700" fill="#526C58">ОПЛАЧЕННЫЕ ЗАКАЗЫ</text>
+    <text x="921" y="202" font-size="43" font-weight="700" letter-spacing="-1" fill="#526C58">$1 200</text>
+    <rect x="638" y="237" width="480" height="115" rx="12" fill="#FFF0E7"/>
+    <circle cx="666" cy="272" r="11" fill="none" stroke="#BC4933" stroke-width="1.8"/>
+    <path d="M666 266v7m0 4v1" stroke="#BC4933" stroke-width="2" stroke-linecap="round"/>
+    <text x="688" y="280" font-size="24" font-weight="700" fill="#BC4933">Завышение на $830</text>
+    <text x="658" y="320" font-size="18" fill="#705E52">Отмена $650 + ожидание оплаты $180</text>
+    <text x="612" y="416" font-size="12" fill="#63717B">Схема учебного кейса · Вымышленные данные</text>
+  </g>
+</svg>

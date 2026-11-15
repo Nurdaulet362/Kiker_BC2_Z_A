@@ -1,109 +1,160 @@
-# Fix the Report
+<div align="center">
 
-Practice finding, repairing and explaining misleading business reports before a spreadsheet task at work.
+![Fix the Report — Find the mistake. Fix the rule.](docs/assets/readme/hero-en.svg)
 
-Fix the Report is a browser learning app built for the Zimran × AIESEC hackathon. It contains six authored lessons across revenue, conversion and business decisions, plus a connected Work Trial. Diagnose an error, repair a formula or recommendation, test it, answer a transfer question and receive a saved review with a next step.
+**English** · [Русский](README.ru.md)
 
-English is the default, regardless of browser language. The EN/RU switch saves your choice. No account is required; progress stays in this browser. All companies and exercise data are fictional. There is no live AI service.
+**Practice the judgment behind a spreadsheet.**
 
-**[Open the public demo](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site)** · **[Source on GitHub](https://github.com/Nurdaulet362/Kiker_BC2_Z_A)**
+[Try the live demo](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site) · [Read the pitch](docs/submission/Fix-the-Report-Pitch-v2.pdf) · [Run locally](#run-locally)
 
-The published demo opens all six lessons and Work Trial with the persistent **Demo access — not a purchase** banner. Payments remain disconnected. The repository also contains later audit fixes; the public demo has not been redeployed with those fixes. See the [audit fixes report](docs/AUDIT_FIXES_REPORT.md).
+React 19 · TypeScript · Vite · Web Workers · EN / RU
+
+</div>
+
+A store reports **$2,030 in revenue**. Only **$1,200 was paid**. Your job: find the faulty assumption, repair the formula, and prove the fix works when the data changes.
+
+**Fix the Report** is a browser learning app with six business-report lessons and a connected Work Trial. You work with editable reports, executable formulas and explained feedback. Built for the **Zimran × AIESEC hackathon**, in the Skills track.
+
+> **The public demo opens all content.** It displays “Demo access — not a purchase.” No account or payment is needed. English opens by default; the EN/RU switch remembers your choice.
+
+[The learning loop](#the-learning-loop) · [Two-minute demo](#two-minute-demo) · [Lessons](#lessons) · [Build and verify](#build-and-verify) · [Project status](#project-status) · [Materials](#materials)
+
+## The learning loop
+
+| Step | What you do | What the app checks |
+| --- | --- | --- |
+| **01 · Investigate** | Change figures and inspect the report. | Show how the reported result responds. |
+| **02 · Diagnose** | Choose the assumption that caused the error. | Compare your diagnosis with the case rule. |
+| **03 · Repair** | Write a formula or choose a business decision. | Test formulas on varied data; check decisions against the report. |
+| **04 · Transfer** | Answer a question in a new situation. | Check whether you can apply the rule again. |
+| **05 · Review** | Read the breakdown and choose your next step. | Save the attempt, hints and result on this device. |
+
+![The first lesson: a cancelled order changed to 2300, a SUMIF repair, and paid revenue of 1200](docs/assets/readme/workspace-en.png)
+
+*Prepared demo run using fictional exercise data. This is the working interface, not a customer result.*
+
+## Two-minute demo
+
+1. Open [**The money that never arrived**](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site/#lesson/revenue-cancelled), then **Open the report**.
+2. Change the cancelled order from **650** to **2300**. Enter `2300` without a currency symbol or thousands separator. The original `SUM` total rises to **$3,680**, although paid revenue stays **$1,200**.
+3. Select **Order status is ignored** and enter:
+
+   ```excel
+   =SUMIF(B2:B101,"Paid",C2:C101)
+   ```
+
+4. Select **Check solution**. The formula is checked against **7 datasets**, including new rows, changed statuses and an empty report.
+5. Answer the transfer question with **$900 in paid revenue**. Choose by meaning: answer order can change. Open the review.
+
+| Prepared attempt | Repair checks | Final score | Outcome |
+| --- | ---: | ---: | --- |
+| Working formula; correct diagnosis and transfer | 7 / 7 | **100 / 100** | Lesson completed |
+| Constant `=1200`; correct diagnosis and transfer | 1 / 7 | **57 / 100** | Practice only |
+| Revealed solution; otherwise correct answers | 7 / 7 | **75 / 100 maximum** | Practice only |
+
+Change the cancelled amount again: the repaired paid total stays the same. `=SUMIFS(C2:C101,B2:B101,"Paid")` is also supported.
+
+**How scoring works:** 20 points for diagnosis + up to 50 for repair + 30 for transfer. Completion requires every repair check, a correct transfer answer, at least 80 points and no revealed solution. Revealing a solution caps repair credit at 25. These scores describe the exercise, not hiring readiness or a qualification.
+
+## Lessons
+
+Three skills, each with a foundation lesson and a practice lesson:
+
+| Skill | Foundation · Free | Practice · Pro proposal |
+| --- | --- | --- |
+| **Revenue** | Cancelled orders inflate revenue. | Paid orders can still be refunded. |
+| **Conversion** | Averaging percentages hides different volumes. | A missing channel changes the overall result. |
+| **Decisions** | More sales can produce less value per advertising dollar. | The better decision can be to hold the budget. |
+
+**Work Trial** combines revenue, conversion and a channel decision in one assignment, with **30 checks** and new assignment variants. It has its own scoring, separate from lesson scores.
+
+**Free:** three foundation lessons and repeat practice. **Pro hypothesis: $19/month** for three practice lessons and Work Trial. The pricing screen is implemented; checkout and subscription billing are not connected. The demo lets reviewers explore both tiers.
+
+The initial audience hypothesis is people preparing for analyst or sales-operations spreadsheet assessments, within the event’s **US, ages 25–45** audience. Demand, willingness to pay and learning outcomes still need user research.
 
 ## Run locally
 
-Use Node.js 22.12+; the frozen version was also checked with Node.js 26.13.0.
+Use **Node.js 26.x**; the recorded release was tested with **26.13.0**. The current toolchain also supports Node **22.12+ within 22.x**, **24.x**, and **26+**. No API keys or application backend are required.
 
 ```sh
+git clone https://github.com/Nurdaulet362/Kiker_BC2_Z_A.git
+cd Kiker_BC2_Z_A
 npm ci
-npm run dev
+VITE_DEMO_ACCESS=true npm run dev -- --port 5173 --strictPort
 ```
 
-Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/) and keep the terminal running. Opening `index.html` directly from disk does not start the app. For all content during development, start with `VITE_DEMO_ACCESS=true npm run dev`.
+Open **[http://127.0.0.1:5173/](http://127.0.0.1:5173/)**. Keep the terminal running. This starts the all-content demo; opening `index.html` directly from disk will not start the app.
 
-## Build modes
+<details>
+<summary>Windows PowerShell: set the demo flag before starting</summary>
+
+After cloning and running `npm ci`:
+
+```powershell
+$env:VITE_DEMO_ACCESS="true"
+npm run dev -- --port 5173 --strictPort
+```
+
+For normal mode, set the value to `"false"`. Other environment-variable examples below use macOS/Linux shell syntax.
+
+</details>
+
+## Build and verify
 
 | Mode | Access | Output |
 | --- | --- | --- |
-| Normal | Three foundation lessons and repeats; practice lessons and Work Trial lead to pricing | `dist/` |
-| Demo | All six lessons and Work Trial, with a persistent **Demo access — not a purchase** banner | `dist-demo/` |
+| **Normal** | Foundation lessons and repeats; practice lessons and Work Trial lead to pricing. | `dist/` |
+| **Demo** | All lessons and Work Trial, with the persistent demo banner. | `dist-demo/` |
 
-Normal build:
-
-```sh
-VITE_DEMO_ACCESS=false npm run build
-npm run preview -- --port 4173 --strictPort
-```
-
-Demo build, preserving the normal output:
+Build and preview the demo:
 
 ```sh
 VITE_DEMO_ACCESS=true npm run build -- --outDir dist-demo
 npm run preview -- --outDir dist-demo --port 4174 --strictPort
 ```
 
-Open [normal preview](http://127.0.0.1:4173/) or [demo preview](http://127.0.0.1:4174/). These are local URLs, not public deployment links. See [BUILD_MODES.md](docs/BUILD_MODES.md) for the complete guide. Only the exact value `true` enables demo access, and it is applied at build time. Changing an environment variable only when starting preview does not change an existing build.
+Open [http://127.0.0.1:4174/](http://127.0.0.1:4174/). For normal mode, use `VITE_DEMO_ACCESS=false npm run build` and `npm run preview -- --port 4173 --strictPort`.
 
-Both output folders can be served by a static host. Hash routes handle navigation, but asset URLs still need the correct Vite base when hosting under a subdirectory. A build served at the domain root uses the current default base.
+Only the exact string `true` enables demo access, **at build time**. Changing the flag when starting preview does not change an existing build. Both outputs can be served by a static host. For a subdirectory deployment, configure Vite’s `base` so assets resolve correctly; hash routing alone does not fix asset paths. See [build modes](docs/BUILD_MODES.md).
 
-## Two-minute demonstration
+**Recorded release check · 15 November 2026 · [`ace8eb9`](https://github.com/Nurdaulet362/Kiker_BC2_Z_A/commit/ace8eb9aa224b239e18d772dd4010dff11ff595d)**
 
-1. Open **The money that never arrived**, then **Open the report**.
-2. Change the cancelled amount from $650 to `2300`, without a currency symbol or thousands separator. The broken total rises to $3,680; paid revenue remains $1,200.
-3. Diagnose the missing status filter. Enter `=SUMIF(B2:B101,"Paid",C2:C101)` or `=SUMIFS(C2:C101,B2:B101,"Paid")`.
-4. Verify the formula against **7 checks** using different datasets. Answer the transfer question with **$900 in paid revenue**; choices may appear in a different order.
-5. With the correct diagnosis and transfer answer, this earns **100/100**. Under the same conditions, hardcoding `=1200` passes only 1 of 7 repair checks and earns **57/100**. Revealing the solution limits repair credit to 25/50 and the total to **75/100**; it is a practice attempt, not a completed lesson.
-
-The learner controls the data. Changing the cancelled amount again demonstrates why a rule survives new data while a copied total does not. Scores describe exercise performance, not certification or hiring readiness.
-
-## Lessons, feedback and pricing
-
-The six lessons cover cancelled-order revenue, weighted conversion, contribution versus sales volume, refunded orders, a missing channel and a budget decision. Each includes editable data, diagnosis, a repair or decision, a transfer question, progressive hints and a saved review.
-
-The lesson score is **20 diagnosis + up to 50 repair + 30 transfer**. Completion requires all repair checks, a correct transfer answer, at least 80 points and no revealed solution. Recommendations, saved progress and retries are implemented; their effect on retention or learning has not been measured. Unlimited generated lesson variants are not implemented.
-
-Work Trial combines revenue, conversion and a channel decision, with 30 checks and fresh assignment variants. Its assessment is separate from lesson scoring.
-
-**Free:** three foundation lessons and repeats. **Pro hypothesis: $19/month** for three practice lessons and Work Trial. The pricing page states: **Payments are not connected yet. This is a product test.** There is no checkout, purchase confirmation, account system or server-side subscription validation. Client-side access restrictions are not a secure payment system.
-
-`PRO_INTEREST_URL` is currently an empty source-code constant, so the interest button is hidden. The app does not collect email addresses or send notifications. Adding a real link would require a source change and a new build; it is not part of the frozen release.
-
-| Route | Purpose |
+| Check | Demo release result |
 | --- | --- |
-| `/` | Learning dashboard |
-| `/#lesson/revenue-cancelled` | First foundation lesson |
-| `/#progress` | Local progress and history |
-| `/#review/<id>` | A saved review in this browser |
-| `/#pricing` | Free and proposed Pro plan |
-| `/#trial` | Work Trial in demo mode; pricing in normal mode |
-| `/#practice` | Redirect to the first lesson; the former standalone screen is no longer routed |
+| Clean public clone, `npm ci`, TypeScript, production build | Passed |
+| Unit tests | **310 / 310** |
+| Chromium e2e against local production preview | **91 / 91** |
+| Chromium e2e against the published demo | **91 / 91** |
+| Published assets compared with the clean build | **24 / 24 SHA-256 matches** |
 
-## Verification
+These are recorded release results, not a live CI badge or a new test run for this README. [Release details and limits](docs/submission/DEMO_RELEASE_V2.md). Normal mode was verified in the [earlier audit](docs/AUDIT_FIXES_REPORT.md); it was not rerun for this demo deployment.
 
-The subsequent audit fixes at code commit `789a9a6` passed **310 unit tests and 91 Chromium e2e tests in each mode**, TypeScript and both production builds in a clean local clone. No existing tests were removed; the checks added 68 unit tests and 19 e2e tests. See the [audit fixes report](docs/AUDIT_FIXES_REPORT.md) for commands, failures during development and remaining limits. These checks do not claim that the public demo has been redeployed.
+<details>
+<summary>Reproduce checks in both build modes</summary>
 
-The sprint closed at code commit `01302ea` with **242 unit tests and 72 Chromium e2e tests passing in each mode**. The [task 4 report](docs/SPRINT_TASK_4_REPORT.md) records those runs, the initial failed fixture and its correction. A separate [clean-clone release check](docs/submission/RELEASE_CHECK.md) records the later verification of the frozen code.
-
-A fresh unauthenticated clone of public GitHub `main` at [`a7ea438`](https://github.com/Nurdaulet362/Kiker_BC2_Z_A/commit/a7ea43838159c2dde91d43d1dbb86e8e2e2b820a) passed `npm ci`, TypeScript, **242 unit tests in each mode**, and both production builds. That public release used application code identical to frozen `01302ea`. The published demo separately passed **72/72 Chromium e2e tests** on its first run, with no failures, skips or flaky tests. See the [public release verification](docs/submission/PUBLIC_RELEASE.md) for those historical commands, timings and deployment checks.
-
-Install dependencies once, then check normal mode:
+After `npm ci`, install Chromium once:
 
 ```sh
-npm ci
+npx playwright install chromium
 npx tsc -b
+```
+
+**Normal mode — first terminal:**
+
+```sh
 VITE_DEMO_ACCESS=false npm test
 VITE_DEMO_ACCESS=false npm run build
-npx playwright install chromium
 npm run preview -- --port 4173 --strictPort
 ```
 
-In a second terminal, while preview runs:
+**Normal mode — second terminal:**
 
 ```sh
 VITE_DEMO_ACCESS=false PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173 npm run test:e2e
 ```
 
-For demo mode:
+**Demo mode — first terminal:**
 
 ```sh
 VITE_DEMO_ACCESS=true npm test
@@ -111,27 +162,81 @@ VITE_DEMO_ACCESS=true npm run build -- --outDir dist-demo
 npm run preview -- --outDir dist-demo --port 4174 --strictPort
 ```
 
-In a second terminal:
+**Demo mode — second terminal:**
 
 ```sh
 VITE_DEMO_ACCESS=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:4174 npm run test:e2e
 ```
 
-The test flag must match the build being served. Run browser suites sequentially or give them separate output directories. `PW_CHANNEL=chrome` selects installed Chrome. Firefox and WebKit are optional through `PW_ALL_BROWSERS=1` after installing those browsers; the stated counts concern Chromium, not those engines or a physical phone.
+Keep each preview running while its browser suite runs. The test flag must match the served build. Run browser suites sequentially, since they share output directories. `PW_CHANNEL=chrome` selects installed Chrome; `PW_ALL_BROWSERS=1` also enables Firefox and WebKit after those browsers are installed. The reported results above cover Chromium only.
 
-## What has not been validated
+</details>
 
-- **Demand and price:** the target audience and $19/month willingness to pay are hypotheses. No validated traction or conversion rate is claimed.
-- **Learning outcomes:** there is no controlled evidence of improved workplace performance, interview outcomes or long-term retention.
-- **Payments and subscription business:** this release does not establish paid customers, functioning checkout or measured subscription retention.
-- **Spreadsheet compatibility:** this is a restricted formula environment, not Excel compatibility. Criteria are case-sensitive: `"Paid"` matches the exercise status; `"paid"` does not. Wildcard escaping and empty-cell behavior have library-specific limits.
-- **Persistence:** local storage is not account sync. Clearing browser data removes access to local progress. Storage failures use an in-page fallback with a warning; closing the page can lose that fallback. Cross-tab merges are not atomic transactions.
-- **Other browsers and physical devices:** a physical phone, Firefox and WebKit remain unverified. Responsive Chromium checks do not establish physical-device coverage.
+## Under the hood
 
-The project is intended to fit a consumer learning-product direction. It does not claim a partnership with, or endorsement by, Zimran.
+```text
+React interface → worker queue → formula / decision checks → scored review
+        ↕
+Local progress, drafts and saved attempts in this browser
+```
 
-## Implementation and documentation
+- **React 19 + TypeScript + Vite** for the interface and static build.
+- **Web Workers** for calculations, with request cancellation, timeouts and recovery.
+- **fast-formula-parser 1.0.19** with an explicit function allowlist. Custom functions use the library’s extension mechanism; arbitrary JavaScript evaluation is not used.
+- **Local storage** for drafts, language and results, with validation, cross-tab merge handling and an in-page fallback warning when storage fails.
+- **Vitest + Playwright** for calculations, persistence, worker recovery and complete user flows.
 
-React 19, TypeScript, Vite, Vitest and Playwright. Formulas run in Web Workers with timeouts and an explicit allowlist using `fast-formula-parser@1.0.19`. `SUMIFS` and `COUNTIFS` use the library's custom-function mechanism and reuse its criteria matching. `MIN`, `MAX` and `COUNTA` use the same extension mechanism and the library's argument helpers. Arbitrary JavaScript evaluation is not used.
+<details>
+<summary>Formula support and code map</summary>
 
-See the [technical handoff](docs/PROJECT_HANDOFF.md) for architecture, storage contracts and formula limitations, and [build modes](docs/BUILD_MODES.md) for commands. Local developer skills, design-tool state and selected internal plans are excluded from the public source tree and are not needed to install, test or build the app. Older retained reports describe historical states; the [audit fixes report](docs/AUDIT_FIXES_REPORT.md) covers the subsequent corrections.
+Supported functions: `SUM`, `SUMIF`, `SUMIFS`, `SUMPRODUCT`, `IF`, `IFERROR`, `COUNT`, `COUNTA`, `COUNTIF`, `COUNTIFS`, `AVERAGE`, `MIN`, `MAX`, `ABS`, `ROUND`, `AND`, `OR`, `NOT`, `N`.
+
+Function names and status criteria remain English in both interfaces. Use `"Paid"` exactly: matching is case-sensitive, so `"paid"` gives a different result. This is a restricted formula environment, not full Excel compatibility. See the [technical handoff](docs/PROJECT_HANDOFF.md) for range, argument and empty-cell behavior.
+
+| Path | Responsibility |
+| --- | --- |
+| [`src/learning/`](src/learning/) | Lesson content, workspace, scoring and saved reviews |
+| [`src/simulation/`](src/simulation/) | Work Trial and its assessment |
+| [`src/formula.ts`](src/formula.ts) | Formula validation and execution |
+| [`src/worker-pool.ts`](src/worker-pool.ts) | Worker queue, cancellation and recovery |
+| [`src/session-storage.ts`](src/session-storage.ts) | Deferred storage writes and change notifications |
+| [`src/access.ts`](src/access.ts) | Normal/demo access and optional interest-link configuration |
+| [`tests/`](tests/) | Unit tests and browser scenarios |
+
+Useful routes: `/#lesson/revenue-cancelled`, `/#progress`, `/#pricing`, `/#trial`. The old `/#practice` link redirects to the first lesson. Saved review URLs refer to results in the same browser.
+
+</details>
+
+## Project status
+
+| Working today | Planned or not yet validated |
+| --- | --- |
+| Six authored lessons, hints and explained reviews | Fresh generated variants across the six lessons |
+| Saved progress, retries and next-step recommendations | Weekly practice goals and measured return behavior |
+| Work Trial with changing figures | More report types for use after hiring |
+| Free/Pro pricing screen and explicit demo access | Payments, accounts and server-validated subscriptions |
+| English/Russian interface with saved choice | User-study results, price validation and learning impact |
+
+There are **no user-study or interest-form results yet**. `PRO_INTEREST_URL` is empty, so the interest button is hidden. There is no live AI service, email collection or notification service. Client-side access controls are not a secure payment system.
+
+Progress belongs to this browser: clearing its data removes it, and local storage is not account sync. If storage fails, the in-page fallback can be lost when the page closes. Firefox, WebKit and physical phones were not verified in the recorded demo release.
+
+The project explores consumer skills learning in the event’s context. It does not claim a partnership with or endorsement by Zimran.
+
+## Materials
+
+| Material | Link |
+| --- | --- |
+| **Pitch · 10 slides** | [English PDF](docs/submission/Fix-the-Report-Pitch-v2.pdf) · [Русский PDF](docs/submission/Презентация_BC2_Z_A.pdf) |
+| **Speaker notes** | [English](docs/submission/PITCH_SLIDES_V2.md) · [Русский](docs/submission/PITCH_SLIDES_V2_RU.md) |
+| **Two-minute demo** | [Video](docs/submission/Fix-the-Report-Demo.webm) · [Script](docs/submission/DEMO_SCRIPT.md) |
+| **Business assumptions and sources** | [Evidence ledger](docs/submission/PITCH_V2_EVIDENCE.md) |
+| **Next user-research step** | [Pilot protocol](docs/submission/PILOT_PROTOCOL.md) · [Empty results template](docs/submission/PILOT_RESULTS_TEMPLATE.csv) |
+| **Questions for the team** | [Jury Q&A](docs/submission/JURY_QA_V2.md) |
+| **Developer context** | [Technical handoff](docs/PROJECT_HANDOFF.md) · [First case](docs/CASE_CONTEXT.md) · [Build modes](docs/BUILD_MODES.md) |
+
+Older reports describe their own release snapshots. The current demo’s recorded verification is in [Demo release v2](docs/submission/DEMO_RELEASE_V2.md).
+
+---
+
+**Try changing one number. Then make the rule hold.** [Open Fix the Report →](https://fix-the-report-zimran-n362.decent-chair-7924.chatgpt.site)
