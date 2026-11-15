@@ -1,5 +1,6 @@
 import { formulaFailure, type FormulaIssue } from "./formula-errors";
 import FormulaParser from "fast-formula-parser";
+import { builtinFailure, builtinFunctions } from "./formula-builtins";
 import { multiCriteriaFailure, multiCriteriaFunctions } from "./formula-multicriteria";
 import {
   expectedRevenue,
@@ -75,8 +76,8 @@ export function calculateGrid(
     if (!FUNCTIONS.has(match[1].toUpperCase()))
       return formulaFailure("function", { fn: match[1].toUpperCase() });
     // This parser drops a leading omitted argument before calling the function.
-    // Reject it for the new functions before it can shift their range positions.
-    if (["SUMIFS", "COUNTIFS"].includes(match[1].toUpperCase()) && /^\s*,/.test(withoutStrings.slice(match.index! + match[0].length)))
+    // These custom functions require every argument to be filled.
+    if (["SUMIFS", "COUNTIFS", "MIN", "MAX", "COUNTA"].includes(match[1].toUpperCase()) && /^\s*,/.test(withoutStrings.slice(match.index! + match[0].length)))
       return formulaFailure("arguments", { fn: match[1].toUpperCase() });
   }
   const withoutNumbers = withoutStrings.replace(
@@ -97,6 +98,7 @@ export function calculateGrid(
   let rangeExceeded = false;
   try {
     const parser = new FormulaParser({
+      functions: builtinFunctions,
       functionsNeedContext: multiCriteriaFunctions,
       onCell: ({ row, col }: { row: number; col: number }) => cell(row, col),
       onRange: ({
@@ -129,14 +131,14 @@ export function calculateGrid(
       col: 3,
       sheet: "Orders",
     });
-    const functionFailure = multiCriteriaFailure(value);
+    const functionFailure = multiCriteriaFailure(value) ?? builtinFailure(value);
     if (functionFailure) return functionFailure;
     if (value === "N/A") return { value };
     if (typeof value !== "number" || !Number.isFinite(value))
       return formulaFailure("result");
     return { value };
   } catch (error) {
-    return multiCriteriaFailure(error) ?? formulaFailure(rangeExceeded ? "range" : "syntax", rangeExceeded ? { end } : undefined);
+    return multiCriteriaFailure(error) ?? builtinFailure(error) ?? formulaFailure(rangeExceeded ? "range" : "syntax", rangeExceeded ? { end } : undefined);
   }
 }
 
